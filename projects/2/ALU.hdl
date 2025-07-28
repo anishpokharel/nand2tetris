@@ -41,5 +41,41 @@ CHIP ALU {
         ng;      // if (out < 0)  equals 1, else 0
 
     PARTS:
-    //// Replace this comment with your code.
+    // if (zx == 1) sets x = 0        // 16-bit constant
+    Mux16 (a=x, b=false, sel=zx, out=muxOutX);
+
+    // if (nx == 1) sets x = !x       // bitwise not
+    Not16(in=muxOutX, out=notX);
+    Mux16 (a=muxOutX, b=notX, sel=nx, out=invertedX);
+
+    // if (zy == 1) sets y = 0        // 16-bit constant
+    Mux16 (a=y, b=false, sel=zy, out=muxOutY);
+    
+
+    // if (ny == 1) sets y = !y       // bitwise not
+    Not16(in=muxOutY, out=notY);
+    Mux16 (a=muxOutY, b=notY, sel=ny, out=muxSelY);
+
+
+    // if (f == 1)  sets out = x + y  // integer 2's complement addition
+    // if (f == 0)  sets out = x & y  // bitwise and
+    And (a=f, b=true, out=ifF);
+    Add16 (a=invertedX, b=muxSelY, out=outAdd16);
+    And16(a=invertedX, b=muxSelY, out=outBitwiseAnd);
+    Mux16 (a=outBitwiseAnd, b=outAdd16, sel=ifF, out=preProcessOut);
+    
+    // if (no == 1) sets out = !out   // bitwise not
+    Not16 (in=preProcessOut, out=notOut);
+    Mux16 (a=preProcessOut, b=notOut, sel=no, out=out1, out=out, out[0..7]=lowOut, out[8..15]=highOut);
+
+    // if (out == 0) zr equals 1, else zr equals 0
+    Or8Way (in=lowOut, out=firstEightWay);
+    Or8Way (in=highOut, out=secondEightWay);
+    Or (a=firstEightWay, b=secondEightWay, out=anyBit);
+    Not (in=anyBit, out=zr);
+
+    // if (out < 0) ng equals 1, else ng equals 0
+    And (a=firstEightWay, b=secondEightWay, out=ng);
+
+ 
 }
