@@ -14,8 +14,10 @@
    D=M            // D = value stored at RAM[24576]
    @PRESSED
    D;JGT          // IF D > 0, jump to PRESSED
-   @NOT_PRESSED
+
+   @NOT_PRESSED   // Jump to Not Pressed if key is not pressed.
    D;JEQ
+
    @INFINITE
    0;JMP          // JMP to INFINITE forever.
 (PRESSED)
@@ -27,11 +29,11 @@
    @PIXEL_LOC    // Declare another variable named test. Here variable refers to memory location. 
    M=D           // Save the content of D register to memory. 
    
-   @8192
+   @8192         // There are 8192 pixels to control, setting D to 8192
    D=A
 
 (INNER_LOOP)
-   @counter
+   @counter      
    D=D-1
    M=D
    
