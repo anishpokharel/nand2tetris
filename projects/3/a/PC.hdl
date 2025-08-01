@@ -14,7 +14,9 @@ CHIP PC {
     OUT out[16];
     
     PARTS:
-    Mux8Way16 (a=output, b=incrementOutput, c=loadInput, d=loadInput, e=resetOut, f=resetOut, g=resetOut, h=resetOut, sel[0]=inc, sel[1]=load, sel[2]=reset, out=firstMux);
+    Mux8Way16 (a=output, b=incrementOutput, c=loadInput, 
+              d=loadInput, e=resetOut, f=resetOut, g=resetOut, h=resetOut, 
+              sel[0]=inc, sel[1]=load, sel[2]=reset, out=firstMux);
     Mux16     (a=in, b=false, sel=reset, out=resetOut);
     Mux16     (a=output, b=in, sel=load, out=loadInput);
     Mux16     (a=loadInput, b=increment, sel=inc, out=incrementOutput);
