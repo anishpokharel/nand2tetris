@@ -33,22 +33,28 @@ CHIP CPU {
 
     PARTS:
     // Figure out if the instruction is A or C instruction. 
-    Not        (in=instruction[15], out=isInstructionA);
-    Mux16      (a=instruction, b=false, sel=instruction[15], out=aInstruction);
-    Mux16      (a=false, b=instruction, sel=instruction[15], out=cInstruction);
+    Not        (in=instruction[15], out=isInstructionA, out=notOpCode);
+    Or         (a=isInstructionA, b=writeA, out=loadA);
+    Mux16      (a=aluOutput, b=instruction, sel=notOpCode, out=aInstruction);
+    Mux16      (a=instruction, b=false, sel=notOpCode, out=cInstruction);
     
     // Just fanning out the cInstruction and extracting the bits from there. 
     Mux16      (a=cInstruction, b=cInstruction, sel=true, out[12]=loadAorM,
                 out[5]=writeA, out[4]=writeD, out[3]=writeM, 
+                out[2]=j3, out[1]=j2, out[0]=j1,
                 out[11]=c1, out[10]=c2, out[9]=c3, out[8]=c4, out[7]=c5, out[6]=c6);
     
-    ARegister  (in=aInstruction, load=isInstructionA, out=aRegisterOut, out[0..14]=addressM);
-    Mux16      (a=inM, b=aRegisterOut, sel=loadAorM, out=toALUY);
+    ARegister  (in=aInstruction, load=loadA, out=aRegisterOut, out[0..14]=addressM);
+    Mux16      (a=aRegisterOut, b=inM, sel=loadAorM, out=toALUY);
     
     DRegister  (in=aluOutput, load=writeD, out=toALUX);
-    ALU        (x=toALUX, y=toALUY, zx=c1, nx=c2, zy=c3, ny=c4, f=c5, no=c6, out=outM, out=aluOutput, zr=zr, ng=ng );
+    ALU        (x=toALUX, y=toALUY, zx=c1, nx=c2, zy=c3, ny=c4, f=c5, no=c6, 
+                out=outM, out=aluOutput, zr=zr, ng=ng );
     
     // Right now program counter is just wired up without verifying any logic to complete the circuit. 
     // Fix the program counter's logic. 
-    PC         (in=aRegisterOut, inc=ng, load=writeA, reset=reset, out[0..14]=pc);
+    PC         (in=aRegisterOut, inc=noJump, load=shouldJump, reset=reset, out[0..14]=pc);
+    
+    DMux8Way   (in=true, sel[0]=j1, sel[1]=j2, sel[2]=j3, a=noJump, b=jgt, c=jeq, d=jge, e=jlt, f=jne, g=jle, h=jmp);
+    Or8Way     (in[0]=false, in[1]=jgt, in[2]=jeq, in[3]=jge, in[4]=jlt, in[5]=jne, in[6]=jle, in[7]=jmp, out=shouldJump);
 }
