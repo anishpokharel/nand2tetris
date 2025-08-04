@@ -25,5 +25,22 @@ CHIP Memory {
     OUT out[16];
 
     PARTS:
-	//// Replace this comment with your code.
+    Mux       (a=load, b=false, sel=address[14], out=loadRam);
+    Mux       (a=false, b=load, sel=address[14], out=loadScreen);
+
+    Mux16     (a[15]=false, a[14]=false, a[0..13]=address[0..13], 
+               b=false, sel=address[14], 
+               out[0..13]=ramAddress);
+
+    Mux16     (a=false, b[15]=false, b[0..14]=address, sel=address[14], 
+               out[0..12]=screenAddress, out[0..14]=keyboardAddress);
+
+    RAM16K    (in=in, load=loadRam, address=ramAddress, out=ramOut); 
+    Screen    (in=in, load=loadScreen, address=screenAddress, out=screenOut);
+    Keyboard  (out=keyboardOut);
+    Mux16     (a=ramOut, b=screenOut, sel=address[14], out=firstMuxOut);
+
+    // If both the bits are on, it's for the keyboard, or it's invalid address.
+    Mux16     (a=firstMuxOut, b=keyboardOut, sel=isKeyboardOrInvalid, out=out);
+    And       (a=address[14], b=address[13], out=isKeyboardOrInvalid);
 }
