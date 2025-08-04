@@ -43,28 +43,39 @@ CHIP CPU {
                 out[5]=writeA, out[4]=writeD, out[3]=writeM, 
                 out[2]=j3, out[1]=j2, out[0]=j1,
                 out[11]=c1, out[10]=c2, out[9]=c3, out[8]=c4, out[7]=c5, out[6]=c6);
+    
+    // Based on the a-bit of the c-instruction, either load A register or inM.
     Mux16      (a=aRegisterOut, b=inM, sel=loadAorM, out=toALUY);
     
+    // Registers.
     ARegister  (in=aInstruction, load=loadA, out=aRegisterOut, out[0..14]=addressM);
     DRegister  (in=aluOutput, load=writeD, out=toALUX);
     
+    // Alu unit.
     ALU        (x=toALUX, y=toALUY, zx=c1, nx=c2, zy=c3, ny=c4, f=c5, no=c6, 
                 out=outM, out=aluOutput, zr=zr, ng=ng );
     Not        (in=ng, out=notNegative);
     Not        (in=zr, out=notZeroOutput);
-    
-    Not        (in=shouldJump, out=shouldNotJump);
-    PC         (in=aRegisterOut, inc=shouldNotJump, load=shouldJump, reset=reset, out[0..14]=pc);
-    DMux8Way   (in=true, sel[0]=j1, sel[1]=j2, sel[2]=j3, a=noJump, b=jgt, c=jeq, d=jge, e=jlt, f=jne, g=jle, h=jmp);
 
 
-    // Some wrapping up code goes here. 
+    // Checking various jump condition.
     And        (a=notNegative, b=jgt, out=firstAndJGT);
     And        (a=firstAndJGT, b=notZeroOutput, out=andJGT);
     And        (a=notNegative, b=jge, out=andJGE);
     And        (a=zr, b=jeq, out=andJEQ);
-    And        (a=notZeroOutput, b=jlt, out=andJLT);
+    And        (a=notZeroOutput, b=jlt, out=firstAndJLT);
+    And        (a=firstAndJLT, b=ng, out=andJLT);
     And        (a=notZeroOutput, b=jne, out=andJNE);
+    And        (a=ng, b=jle, out=negativeAndJle);
+    And        (a=orJLE, b=jle, out=andJLE);
+    Or         (a=negativeAndJle, b=zr, out=orJLE);
+    
 
-    Or8Way     (in[0]=false, in[1]=andJGT, in[2]=andJEQ, in[3]=andJGE, in[4]=andJLT, in[5]=andJNE, in[6]=jle, in[7]=jmp, out=shouldJump);
+    DMux8Way   (in=true, sel[0]=j1, sel[1]=j2, sel[2]=j3, a=noJump, b=jgt, c=jeq, d=jge, e=jlt, f=jne, g=jle, h=jmp);
+    Or8Way     (in[0]=false, in[1]=andJGT, in[2]=andJEQ, in[3]=andJGE, in[4]=andJLT, in[5]=andJNE, in[6]=andJLE, in[7]=jmp, out=shouldJump);
+    
+    // Program counter.
+    Not        (in=shouldJump, out=shouldNotJump);
+    PC         (in=aRegisterOut, inc=shouldNotJump, load=shouldJump, reset=reset, out[0..14]=pc);
+
 }
