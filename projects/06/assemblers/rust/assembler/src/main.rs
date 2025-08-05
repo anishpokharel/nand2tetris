@@ -1,4 +1,7 @@
 mod assembler;
+mod parser;
+mod symbol_table;
+mod code;
 
 use std::env;
 use std::fs::File;
@@ -11,7 +14,8 @@ fn main() {
         eprintln!("Usage: hack_assembler <input.asm>");
         std::process::exit(1);
     } else {
-        let input_file = &args[1];
+        let input_file: &String = &args[1];
+        let mut symbol_table = symbol_table::SymbolTable::new();
         let mut file = File::open(input_file)
             .expect("Failed to open input file, please check the file path and permissions");
         let mut contents = String::new();
@@ -19,8 +23,7 @@ fn main() {
             .expect("Failed to read input file. Please ensure the file is not empty and is readable.");
         // Here you would typically read the input file, parse it, and generate the .hack output.
         // For now, we just print the input file name.
-        println!("Input file: {}", contents);
-        match assembler::assemble(&contents) {
+        match assembler::assemble(&contents, &mut symbol_table) {
             Ok(machine_code) => {
                 // Write the machine code to a .hack file
                 let output_file = input_file.replace(".asm", ".hack");
@@ -30,7 +33,7 @@ fn main() {
                     writeln!(output, "{}", line)
                         .expect("Failed to write to output file. Please ensure the file is writable.");
                 }
-                println!("Machine code written successfully.");
+            // Machine code written successfully.
             }
             Err(e) => {
                 eprintln!("Error during assembly: {}", e);
