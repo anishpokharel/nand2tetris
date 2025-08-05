@@ -58,17 +58,18 @@ pub fn find_label(source: &str, symbol_table: &mut SymbolTable) {
         if line.starts_with('(') && line.ends_with(')') {
             let label = line[1..line.len() - 1].to_string();
             if symbol_table.contains(&label) {
-                eprintln!("Label {} already exists in the symbol table", label);
+                // Do nothing if the label already exists
             } else {
+                // Create a label instruction to supress compiler warning.
+                Instruction::Label(label.clone());
                 // Add label to symbol table with the current instruction number
-                println!("Found label: {}", label);
                 symbol_table.add_entry(label.clone(), instruction_number);
             }
         }
     }
 }
 
-pub fn parse_lines(source: &str, symbol_table: &mut SymbolTable) -> Vec<Instruction> {
+pub fn parse_lines(source: &str) -> Vec<Instruction> {
     // Parse each lines of the source code and generate Vector of Instructions.
     let mut instructions = Vec::new();
     for line in source.lines() {
@@ -88,21 +89,23 @@ pub fn parse_lines(source: &str, symbol_table: &mut SymbolTable) -> Vec<Instruct
             // Here it could be an A-instruction or a variable
             // If it starts with '@' and is followed by a number, it's an A-instruction
             let value: String = stripped[1..].trim().to_string();
+            let mut a_number = -2;
 
+            // If parsing to i32 is okay, also check if it's less than maximum allowed value.
+            // Anything above that number should be treated as a variable.
             if value.parse::<i32>().is_ok() {
+                a_number = value.parse::<i32>().unwrap();
+            }
+            // Maximum allowed value for A-instruction is 24,576 (2^15 - 1).
+            if (a_number != -2) && a_number < 32_768 {
                 // If it's all digits, it's an A-instruction
-                println!("Found A-instruction {}", stripped);
                 instructions.push(Instruction::AInstruction(value));
-            } else if value.chars().all(|c| c.is_alphanumeric() || c == '_') {
+            } else {
                 // If it's alphanumeric or underscore, it's a variable
                 // If it starts with '@' and is followed by a variable name, it's a variable
-                println!("Found a variable {}", stripped);
                 instructions.push(Instruction::Variable(value));
-            } else {
-                eprintln!("Invalid A-instruction or variable: {}", stripped);
             }
         } else if stripped.contains('=') || stripped.contains(';') {
-            println!("Found C-instruction {}", stripped);
             let parts: Vec<&str> = stripped.split(';').collect();
             let comp_dest: Vec<&str> = parts[0].split('=').collect();
             let dest = if comp_dest.len() > 1 {
@@ -116,23 +119,7 @@ pub fn parse_lines(source: &str, symbol_table: &mut SymbolTable) -> Vec<Instruct
             } else {
                 None
             };
-            println!(
-                "Parsed C-instruction: dest: {:?}, comp: {}, jump: {:?}",
-                dest, comp, jump
-            );
             instructions.push(Instruction::CInstruction { dest, comp, jump });
-        } else if stripped.starts_with('(') && stripped.ends_with(')') {
-            let label = stripped[1..stripped.len() - 1].to_string();
-            println!("Found label {}", stripped);
-            if symbol_table.contains(&label) {
-                eprintln!("Label {} already exists in the symbol table", label);
-            } else {
-                // Add label to symbol table with a placeholder address
-                symbol_table.add_entry(label.clone(), 0);
-            }
-            instructions.push(Instruction::Label(
-                stripped[1..stripped.len() - 1].to_string(),
-            ));
         }
     }
     instructions

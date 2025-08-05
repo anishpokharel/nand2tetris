@@ -21,8 +21,6 @@ fn main() {
         let mut contents = String::new();
         file.read_to_string(&mut contents)
             .expect("Failed to read input file. Please ensure the file is not empty and is readable.");
-        // Here you would typically read the input file, parse it, and generate the .hack output.
-        // For now, we just print the input file name.
         match assembler::assemble(&contents, &mut symbol_table) {
             Ok(machine_code) => {
                 // Write the machine code to a .hack file
