@@ -5,7 +5,7 @@ use crate::symbol_table::SymbolTable;
 pub fn instruction_to_bin(instruction: &Instruction, symbol_table: &mut SymbolTable) -> String {
     match instruction {
         Instruction::AInstruction(value) => {
-            format!("{:015b}", value.parse::<u16>().unwrap())
+            format!("{:016b}", value.parse::<u16>().unwrap())
         }
         Instruction::CInstruction { dest, comp, jump } => {
             let dest_bin = code::dest_to_bin(dest.as_deref());
