@@ -13,7 +13,10 @@ pub fn instruction_to_bin(instruction: &Instruction, symbol_table: &mut SymbolTa
             let jump_bin = code::jump_to_bin(jump.as_deref());
             format!("111{}{}{}", comp_bin, dest_bin, jump_bin)
         }
-        Instruction::Label(_) => panic!("Labels should not be converted to binary"),
+        Instruction::Label(_) => {
+            // Labels are not converted to binary, they are used for resolving addresses later.
+            String::new()
+        }
         Instruction::Variable(value) => {
             // Request is variable to be converted into binary. First check if it exists in the symbol table.
             // If it does, return the address in binary. If not, add it to the symbol table and return the address in binary.
