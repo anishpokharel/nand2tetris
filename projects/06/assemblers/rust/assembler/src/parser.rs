@@ -54,7 +54,6 @@ pub fn find_label(source: &str, symbol_table: &mut SymbolTable) {
     }
 
     for line in trimmed_source {
-        instruction_number += 1; // Increment instruction number for non-label lines
         if line.starts_with('(') && line.ends_with(')') {
             let label = line[1..line.len() - 1].to_string();
             if symbol_table.contains(&label) {
@@ -65,6 +64,8 @@ pub fn find_label(source: &str, symbol_table: &mut SymbolTable) {
                 // Add label to symbol table with the current instruction number
                 symbol_table.add_entry(label.clone(), instruction_number);
             }
+        } else {
+        instruction_number += 1; // Increment instruction number for non-label lines
         }
     }
 }
