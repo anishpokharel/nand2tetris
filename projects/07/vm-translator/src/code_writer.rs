@@ -67,104 +67,87 @@ pub fn categorize_commands(command: &str) -> VmCommand {
 }
 
 pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
-    let mut stack_pointer = 256;
-    // Initialize Stack Pointer SP.
-    let init_stack_pointer = format!("@{}\nD=A\n@SP\nM=D", stack_pointer);
-
     let mut machine_code = Vec::new();
-    machine_code.push(init_stack_pointer); // Adding to machine code vector.
     for command in vm_command {
         let line_asm_code: String;
         println!("{}", command); // Delete this line when ready.
         match command {
-            VmCommand::AirthLogic(command) => match command.as_str() {
-                "add" => {
-                    // Pop two values from the stack.
-                    let x_value = format!("@{}\nD=M\n@x\nM=D", stack_pointer);
-                    stack_pointer -= 1;
-                    let y_value = format!("\n@{}\nD=M\n@y\nM=D", stack_pointer);
-                    stack_pointer -= 1;
-                    let added_value = format!("\n@x\nD=M\n@y\nA=M\nM=A\nD=D+M");
-                    let result = format!("\n@{}\nM=D", stack_pointer);
-                    stack_pointer += 1;
-                    line_asm_code = format!("{}{}{}{}", x_value, y_value, added_value, result);
-                    machine_code.push(line_asm_code);
+            VmCommand::AirthLogic(command) => {
+                match command.as_str() {
+                    "add" => {
+                        // Pop x & y from stack, add them up and put it back on stack.
+                        // Resulting operation will decrease stack size by 1.
+                        line_asm_code = "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nD=D+M\n@SP\nA=M\nM=D\n@SP\nM=M+1".to_string();
+                        machine_code.push(line_asm_code);
+                    }
+                    "sub" => {
+                        line_asm_code = "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nD=M-D\n@SP\nA=M\nM=D\n@SP\nM=M+1".to_string();
+                        machine_code.push(line_asm_code);
+                    }
+                    "neg" => {
+                        line_asm_code =
+                            "@SP\nM=M-1\nA=M\nD=M\nD=-D\n@SP\nM=M+1\nA=M\nM=D".to_string();
+                        machine_code.push(line_asm_code);
+                    }
+                    "eq" => {
+                        println!("Airth {} not implemented yet.", "eq");
+                    }
+                    "gt" => {
+                        println!("Airth {} not implemented yet.", "gt");
+                    }
+                    "lt" => {
+                        println!("Airth {} not implemented yet.", "lt");
+                    }
+                    "and" => {
+                        println!("Airth {} not implemented yet.", "and");
+                    }
+                    "or" => {
+                        println!("Airth {} not implemented yet.", "or");
+                    }
+                    "not" => {
+                        println!("Airth {} not implemented yet.", "not");
+                    }
+                    _ => {
+                        println!("This should not be printed in console. Investigate!")
+                    }
                 }
-                "sub" => {
-                    // This is my assumption as to how to handle the add & subs.
-                    // This might not be how it's done and I have strong feeling.
-                    let x_value = format!("@{}\nD=M\n@x\nM=D", stack_pointer);
-                    stack_pointer -= 1;
-                    let y_value = format!("\n@{}\nD=M\n@y\nM=D", stack_pointer);
-                    stack_pointer -= 1;
-                    let subtracted_value = format!("\n@x\nD=M\n@y\nA=M\nM=A\nD=D-M");
-                    let result = format!("\n@{}\nM=D", stack_pointer);
-                    stack_pointer += 1;
-                    line_asm_code = format!("{}{}{}{}", x_value, y_value, subtracted_value, result);
-                    machine_code.push(line_asm_code);
-                }
-                "neg" => {
-                    let x_value = format!("@{}\nD=M\n@x\nM=D", stack_pointer);
-                    stack_pointer -= 1;
-                    let negative_value= format!("\n@x\nD=M\nD=-D");
-                    let result = format!("\n@{}\nM=D", stack_pointer);
-                    stack_pointer += 1;
-                    line_asm_code = format!("{}{}{}", x_value, negative_value, result);
-                    machine_code.push(line_asm_code);
-                }
-                "eq" => {
-                    // This is utterly stupid. Wrong in many levels. 
-                    let x_value = format!("@{}\nD=M\n@x\nM=D", stack_pointer);
-                    stack_pointer -= 1;
-                    let y_value = format!("\n@{}\nD=M\n@y\nM=D", stack_pointer);
-                    stack_pointer -= 1;
-                    let eq_compare = format!("\n@x\nD=M\n@y\nA=m\nM=A\nD=D==M");
-                    line_asm_code = format!("{}{}{}", x_value, y_value, eq_compare);
-                    machine_code.push(line_asm_code);
-
-                }
-                "gt" => {
-                    stack_pointer -= 1;
-                }
-                "lt" => {
-                    stack_pointer -= 1;
-                }
-                "and" => {
-                    stack_pointer -= 2;
-                }
-                "or" => {
-                    stack_pointer -= 2;
-                }
-                "not" => {
-                    let x_value = format!("@{}\nD=M\n@x\nM=D", stack_pointer);
-                    stack_pointer -= 1;
-                    let not_value = format!("\n@x\nD=M\nD=!D");
-                    let result = format!("\n@{}\nM=D", stack_pointer);
-                    stack_pointer += 1;
-                    line_asm_code = format!("{}{}{}",x_value, not_value, result);
-                    machine_code.push(line_asm_code);
-                }
-                _ => {
-                    println!("This should not be printed in console. Investigate!")
-                }
-            },
+            }
             VmCommand::PushPop {
                 d_type,
                 segment,
                 value,
             } => {
                 if d_type.eq("push") {
-                    // For Push off the stack.
-                    stack_pointer += 1;
-                    line_asm_code = format!("@x\nD=M\n@{}\nM=D", stack_pointer);
-                    machine_code.push(line_asm_code);
-                    segment.contains("pat"); // Delete me
+                    match segment.as_str() {
+                        "argument" => {
+                            println!("{} not implemented yet.", "argument");
+                        }
+                        "local" => {
+                            println!("{} not implemented yet.", "local");
+                        }
+                        "static" => {
+                            println!("{} not implemented yet.", "static");
+                        }
+                        "constant" => {
+                            line_asm_code = format!("@{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1", value);
+                            machine_code.push(line_asm_code);
+                        }
+                        "this" => {
+                            println!("{} not implemented yet.", "this");
+                        }
+                        "that" => {
+                            println!("{} not implemented yet.", "that");
+                        }
+                        "pointer" => {
+                            println!("{} not implemented yet.", "pointer");
+                        }
+                        "temp" => {
+                            println!("{} not implemented yet.", "temp");
+                        }
+                        _ => {}
+                    }
                 } else {
                     // For Pop off the stack.
-                    stack_pointer -= 1;
-                    line_asm_code = format!("@{}\nD=M\n@x\nM=D", stack_pointer);
-                    machine_code.push(line_asm_code);
-                    value.contains("pat"); // Delete me
                 }
             }
             VmCommand::Function(_command) => {}
