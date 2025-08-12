@@ -70,7 +70,6 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
     let mut machine_code = Vec::new();
     for command in vm_command {
         let line_asm_code: String;
-        println!("{}", command); // Delete this line when ready.
         match command {
             VmCommand::AirthLogic(command) => {
                 match command.as_str() {
@@ -90,7 +89,8 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                         machine_code.push(line_asm_code);
                     }
                     "eq" => {
-                        println!("Airth {} not implemented yet.", "eq");
+                        line_asm_code = "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=D-A\n@EQ_RETURN\nD;JEQ\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_EQ\n0;JMP\n(EQ_RETURN)\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_EQ\n0;JMP\n(END_EQ)".to_string();
+                        machine_code.push(line_asm_code);
                     }
                     "gt" => {
                         println!("Airth {} not implemented yet.", "gt");
