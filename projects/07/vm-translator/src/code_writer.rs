@@ -68,7 +68,10 @@ pub fn categorize_commands(command: &str) -> VmCommand {
 
 pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
     let mut machine_code = Vec::new();
-    for command in vm_command {
+    let initiliaze_stack_base = "@256\nD=A\n@SP\nM=D".to_string();
+    machine_code.push(initiliaze_stack_base);
+
+    for (i, command) in vm_command.iter().enumerate() {
         let line_asm_code: String;
         match command {
             VmCommand::AirthLogic(command) => {
@@ -85,27 +88,34 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                     }
                     "neg" => {
                         line_asm_code =
-                            "@SP\nM=M-1\nA=M\nD=M\nD=-D\n@SP\nM=M+1\nA=M\nM=D".to_string();
+                            "@SP\nM=M-1\nA=M\nA=M\nD=A\nD=-D\n@SP\nA=M\nM=D\n@SP\nM=M+1".to_string();
                         machine_code.push(line_asm_code);
                     }
                     "eq" => {
-                        line_asm_code = "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=D-A\n@EQ_RETURN\nD;JEQ\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_EQ\n0;JMP\n(EQ_RETURN)\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_EQ\n0;JMP\n(END_EQ)".to_string();
+                        line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=D-A\n@EQ_RETURN.{}\nD;JEQ\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_EQ.{}\n0;JMP\n(EQ_RETURN.{})\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_EQ.{}\n0;JMP\n(END_EQ.{})\n@SP", i, i, i, i, i);
                         machine_code.push(line_asm_code);
                     }
                     "gt" => {
-                        println!("Airth {} not implemented yet.", "gt");
+                        line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=A-D\n@POSITIVE_GT.{}\nD;JGT\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_GT.{}\n0;JMP\n(POSITIVE_GT.{})\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_GT.{}\n0;JMP\n(END_GT.{})\n@SP", i, i, i, i, i);
+                        machine_code.push(line_asm_code);
                     }
                     "lt" => {
-                        println!("Airth {} not implemented yet.", "lt");
+                        line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=D-A\n@POSITIVE_LT.{}\nD;JGT\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_LT.{}\n0;JMP\n(POSITIVE_LT.{})\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_LT.{}\n0;JMP\n(END_LT.{})\n@SP", i, i, i,  i, i);
+                        machine_code.push(line_asm_code);
                     }
                     "and" => {
-                        println!("Airth {} not implemented yet.", "and");
+                        line_asm_code = "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=D&A\n@SP\nA=M\nM=D\n@SP\nM=M+1".to_string();
+                        machine_code.push(line_asm_code);
                     }
                     "or" => {
-                        println!("Airth {} not implemented yet.", "or");
+                        line_asm_code = "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=D|A\n@SP\nA=M\nM=D\n@SP\nM=M+1".to_string();
+                        machine_code.push(line_asm_code);
                     }
                     "not" => {
-                        println!("Airth {} not implemented yet.", "not");
+                        line_asm_code =
+                            "@SP\nM=M-1\nA=M\nD=M\nD=!D\n@SP\nA=M\nM=D\n@SP\nM=M+1"
+                                .to_string();
+                        machine_code.push(line_asm_code);
                     }
                     _ => {
                         println!("This should not be printed in console. Investigate!")
