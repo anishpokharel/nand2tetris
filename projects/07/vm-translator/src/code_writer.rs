@@ -29,12 +29,6 @@ impl fmt::Display for VmCommand {
     }
 }
 
-/* pub fn generate_code(source_line: &str) -> String {
-    let machine_code = source_line.to_string();
-    // Detect Command Type.
-    return machine_code;
-} */
-
 pub fn categorize_commands(command: &str) -> VmCommand {
     let vm_command: VmCommand;
     if command.starts_with("push") || command.starts_with("pop") {
@@ -88,19 +82,32 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                     }
                     "neg" => {
                         line_asm_code =
-                            "@SP\nM=M-1\nA=M\nA=M\nD=A\nD=-D\n@SP\nA=M\nM=D\n@SP\nM=M+1".to_string();
+                            "@SP\nM=M-1\nA=M\nA=M\nD=A\nD=-D\n@SP\nA=M\nM=D\n@SP\nM=M+1"
+                                .to_string();
                         machine_code.push(line_asm_code);
                     }
                     "eq" => {
-                        line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=D-A\n@EQ_RETURN.{}\nD;JEQ\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_EQ.{}\n0;JMP\n(EQ_RETURN.{})\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_EQ.{}\n0;JMP\n(END_EQ.{})\n@SP", i, i, i, i, i);
+                        // Basically, it's a small algo to check if given operands are equal.
+                        // Checks if both operands negates themselves to zero, if yes equals, else not.
+                        // Included index to make the label unique to each vm command.
+                        line_asm_code = format!(
+                            "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=D-A\n@EQ_RETURN.{}\nD;JEQ\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_EQ.{}\n0;JMP\n(EQ_RETURN.{})\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_EQ.{}\n0;JMP\n(END_EQ.{})\n@SP",
+                            i, i, i, i, i
+                        );
                         machine_code.push(line_asm_code);
                     }
                     "gt" => {
-                        line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=A-D\n@POSITIVE_GT.{}\nD;JGT\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_GT.{}\n0;JMP\n(POSITIVE_GT.{})\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_GT.{}\n0;JMP\n(END_GT.{})\n@SP", i, i, i, i, i);
+                        line_asm_code = format!(
+                            "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=A-D\n@POSITIVE_GT.{}\nD;JGT\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_GT.{}\n0;JMP\n(POSITIVE_GT.{})\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_GT.{}\n0;JMP\n(END_GT.{})\n@SP",
+                            i, i, i, i, i
+                        );
                         machine_code.push(line_asm_code);
                     }
                     "lt" => {
-                        line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=D-A\n@POSITIVE_LT.{}\nD;JGT\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_LT.{}\n0;JMP\n(POSITIVE_LT.{})\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_LT.{}\n0;JMP\n(END_LT.{})\n@SP", i, i, i,  i, i);
+                        line_asm_code = format!(
+                            "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=D-A\n@POSITIVE_LT.{}\nD;JGT\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_LT.{}\n0;JMP\n(POSITIVE_LT.{})\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_LT.{}\n0;JMP\n(END_LT.{})\n@SP",
+                            i, i, i, i, i
+                        );
                         machine_code.push(line_asm_code);
                     }
                     "and" => {
@@ -113,8 +120,7 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                     }
                     "not" => {
                         line_asm_code =
-                            "@SP\nM=M-1\nA=M\nD=M\nD=!D\n@SP\nA=M\nM=D\n@SP\nM=M+1"
-                                .to_string();
+                            "@SP\nM=M-1\nA=M\nD=M\nD=!D\n@SP\nA=M\nM=D\n@SP\nM=M+1".to_string();
                         machine_code.push(line_asm_code);
                     }
                     _ => {
@@ -130,34 +136,63 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                 if d_type.eq("push") {
                     match segment.as_str() {
                         "argument" => {
-                            println!("{} not implemented yet.", "argument");
+                            println!("PUSH {} not implemented yet.", "argument");
                         }
                         "local" => {
-                            println!("{} not implemented yet.", "local");
+                            println!("PUSH {} not implemented yet.", "local");
+                            line_asm_code = format!("");
                         }
                         "static" => {
-                            println!("{} not implemented yet.", "static");
+                            println!("PUSH {} not implemented yet.", "static");
                         }
                         "constant" => {
                             line_asm_code = format!("@{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1", value);
                             machine_code.push(line_asm_code);
                         }
                         "this" => {
-                            println!("{} not implemented yet.", "this");
+                            println!("PUSH {} not implemented yet.", "this");
                         }
                         "that" => {
-                            println!("{} not implemented yet.", "that");
+                            println!("PUSH {} not implemented yet.", "that");
                         }
                         "pointer" => {
-                            println!("{} not implemented yet.", "pointer");
+                            println!("PUSH {} not implemented yet.", "pointer");
                         }
                         "temp" => {
-                            println!("{} not implemented yet.", "temp");
+                            println!("PUSH {} not implemented yet.", "temp");
                         }
                         _ => {}
                     }
                 } else {
                     // For Pop off the stack.
+                    match segment.as_str() {
+                        "argument" => {
+                            println!("POP {} not implemented yet.", "argument");
+                        }
+                        "local" => {
+                            line_asm_code = format!("@{}\nD=A\n@LOCAL\nA=M\n", value);
+                            machine_code.push(line_asm_code);
+                        }
+                        "static" => {
+                            println!("POP {} not implemented yet.", "static");
+                        }
+                        "constant" => {
+                            println!("POP {} not implemented yet.", "constant");
+                        }
+                        "this" => {
+                            println!("POP {} not implemented yet.", "this");
+                        }
+                        "that" => {
+                            println!("POP {} not implemented yet.", "that");
+                        }
+                        "pointer" => {
+                            println!("POP {} not implemented yet.", "pointer");
+                        }
+                        "temp" => {
+                            println!("POP {} not implemented yet.", "temp");
+                        }
+                        _ => {}
+                    }
                 }
             }
             VmCommand::Function(_command) => {}

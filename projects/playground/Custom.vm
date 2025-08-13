@@ -1,0 +1,22 @@
+push constant 20
+push constant 30
+add
+push constant 8888
+push constant 82
+push constant 52
+sub
+push constant 8888
+push constant 20
+push constant 30
+and
+push constant 8888
+push constant 30
+push constant 20
+or
+push constant 8888
+push constant 30
+neg
+push constant 8888
+push constant 20
+not
+
