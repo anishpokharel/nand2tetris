@@ -52,10 +52,10 @@ pub fn categorize_commands(command: &str) -> VmCommand {
         || command.starts_with("not")
     {
         vm_command = VmCommand::AirthLogic(command.to_string());
-    } else if command.starts_with("fn") {
-        return VmCommand::Function("change-me".to_string());
+    } else if command.starts_with("function") {
+        return VmCommand::Function(command.to_string());
     } else {
-        return VmCommand::Branching("me-as-well".to_string());
+        return VmCommand::Branching(command.to_string());
     }
     return vm_command;
 }
@@ -282,8 +282,16 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                     }
                 }
             }
-            VmCommand::Function(_command) => {}
-            VmCommand::Branching(_command) => {}
+            VmCommand::Function(_command) => {
+                println!("Alas! function not implemented, yet.");
+                line_asm_code = format!("// Waiting for implementation of function call.");
+                machine_code.push(line_asm_code);
+            }
+            VmCommand::Branching(_command) => {
+                println!("Alas! branching not implemented, yet.");
+                line_asm_code = format!("// Waiting for implementation of branching.");
+                machine_code.push(line_asm_code);
+            }
         }
     }
     return machine_code;
