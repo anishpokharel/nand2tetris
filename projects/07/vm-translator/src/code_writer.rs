@@ -60,8 +60,9 @@ pub fn categorize_commands(command: &str) -> VmCommand {
     return vm_command;
 }
 
-pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
+pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> Vec<String> {
     let mut machine_code = Vec::new();
+    let f_name = file_name.as_str();
     let initiliaze_stack_base = "@256\nD=A\n@SP\nM=D".to_string();
     machine_code.push(initiliaze_stack_base);
 
@@ -153,7 +154,11 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                             machine_code.push(line_asm_code);
                         }
                         "static" => {
-                            println!("PUSH {} not implemented yet.", "static");
+                            line_asm_code = format!(
+                                "@{}.{}\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1", f_name, 
+                                value
+                            );
+                            machine_code.push(line_asm_code);
                         }
                         "constant" => {
                             // Constants are well, constants! So the value is being pushed here.
@@ -180,7 +185,6 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                             match value.as_str() {
                                 "0" => {
                                     // pointer 0 is THIS Pointer, which is RAM[3]
-                                    println!("{} matched {}", "PUSH", "ZERO");
                                     line_asm_code = format!(
                                         // this is RAM[3]
                                         "@3\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1"
@@ -189,7 +193,6 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                                 }
                                 "1" => {
                                     // pointer 1 is THAT Pointer, which is RAM[4]
-                                    println!("{} matched {}", "PUSH", "ONE");
                                     line_asm_code = format!(
                                         // this is RAM[3]
                                         "@4\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1"
@@ -232,10 +235,14 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                             machine_code.push(line_asm_code);
                         }
                         "static" => {
-                            println!("POP {} not implemented yet.", "static");
+                            line_asm_code = format!(
+                                "@SP\nM=M-1\nA=M\nD=M\n@{}.{}\nM=D",
+                                f_name, value
+                            );
+                            machine_code.push(line_asm_code);
                         }
                         "constant" => {
-                            println!("POP {} not implemented yet.", "constant");
+                        // There is no implementation for this.
                         }
                         "this" => {
                             line_asm_code = format!(
@@ -251,25 +258,17 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                             );
                             machine_code.push(line_asm_code);
                         }
-                        "pointer" => {
-                            match value.as_str() {
-                                "0" => {
-                                    println!("{} matched {}", "POP", "ZERO");
-                                    line_asm_code = format!(
-                                        "@SP\nM=M-1\nA=M\nD=M\n@3\nM=D"
-                                    );
-                                    machine_code.push(line_asm_code);
-                                }
-                                "1" => {
-                                    println!("{} matched {}", "POP", "ONE");
-                                    line_asm_code = format!(
-                                        "@SP\nM=M-1\nA=M\nD=M\n@4\nM=D"
-                                    );
-                                    machine_code.push(line_asm_code);
-                                }
-                                _ => {}
+                        "pointer" => match value.as_str() {
+                            "0" => {
+                                line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@3\nM=D");
+                                machine_code.push(line_asm_code);
                             }
-                        }
+                            "1" => {
+                                line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@4\nM=D");
+                                machine_code.push(line_asm_code);
+                            }
+                            _ => {}
+                        },
                         "temp" => {
                             // Temp is going to be differennt implementation than others.
                             // As temp is accessed differently by adding 5 to the index.

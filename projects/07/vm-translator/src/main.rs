@@ -25,13 +25,14 @@ fn main() {
     );
     let mut input_file = File::open(input_file_name).expect(&message);
     let mut contents = String::new();
+
     input_file
         .read_to_string(&mut contents)
         .expect("Failed to read input file.");
     // Now the parser should be called with the contents of the file.
     let first_parse = parser::parse_lines(contents);
     let machine_code: Vec<String>;
-    machine_code = generate_machine_code(first_parse);
+    machine_code = generate_machine_code(first_parse, input_file_name.replace(".vm", "").replace("/", ""));
     let output_file_name = input_file_name.replace(".vm", ".asm");
     let mut output_file = File::create(output_file_name).expect("Failed to open output file.");
     for code in machine_code {
