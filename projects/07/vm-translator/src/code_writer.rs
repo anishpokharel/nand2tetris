@@ -177,7 +177,27 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                             machine_code.push(line_asm_code);
                         }
                         "pointer" => {
-                            println!("PUSH {} not implemented yet.", "pointer");
+                            match value.as_str() {
+                                "0" => {
+                                    // pointer 0 is THIS Pointer, which is RAM[3]
+                                    println!("{} matched {}", "PUSH", "ZERO");
+                                    line_asm_code = format!(
+                                        // this is RAM[3]
+                                        "@3\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1"
+                                    );
+                                    machine_code.push(line_asm_code);
+                                }
+                                "1" => {
+                                    // pointer 1 is THAT Pointer, which is RAM[4]
+                                    println!("{} matched {}", "PUSH", "ONE");
+                                    line_asm_code = format!(
+                                        // this is RAM[3]
+                                        "@4\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1"
+                                    );
+                                    machine_code.push(line_asm_code);
+                                }
+                                _ => {}
+                            }
                         }
                         "temp" => {
                             line_asm_code = format!(
@@ -195,7 +215,7 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                     // For Pop off the stack.
                     match segment.as_str() {
                         "argument" => {
-                            // Similar implementation. 
+                            // Similar implementation.
                             line_asm_code = format!(
                                 "@SP\nM=M-1\nA=M\nD=M\n@13\nM=D\n@{}\nD=A\n@2\nD=D+M\n@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D",
                                 value
@@ -232,10 +252,26 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                             machine_code.push(line_asm_code);
                         }
                         "pointer" => {
-                            println!("POP {} not implemented yet.", "pointer");
+                            match value.as_str() {
+                                "0" => {
+                                    println!("{} matched {}", "POP", "ZERO");
+                                    line_asm_code = format!(
+                                        "@SP\nM=M-1\nA=M\nD=M\n@3\nM=D"
+                                    );
+                                    machine_code.push(line_asm_code);
+                                }
+                                "1" => {
+                                    println!("{} matched {}", "POP", "ONE");
+                                    line_asm_code = format!(
+                                        "@SP\nM=M-1\nA=M\nD=M\n@4\nM=D"
+                                    );
+                                    machine_code.push(line_asm_code);
+                                }
+                                _ => {}
+                            }
                         }
                         "temp" => {
-                            // Temp is going to be differennt implementation than others. 
+                            // Temp is going to be differennt implementation than others.
                             // As temp is accessed differently by adding 5 to the index.
                             line_asm_code = format!(
                                 "@SP\nM=M-1\nA=M\nD=M\n@13\nM=D\n@5\nD=A\n@{}\nD=A+D\n@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D",
