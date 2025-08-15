@@ -136,30 +136,58 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                 if d_type.eq("push") {
                     match segment.as_str() {
                         "argument" => {
-                            println!("PUSH {} not implemented yet.", "argument");
+                            // ARG is RAM[2]
+                            line_asm_code = format!(
+                                "@{}\nD=A\n@2\nA=D+M\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1",
+                                value
+                            );
+                            machine_code.push(line_asm_code);
                         }
                         "local" => {
-                            println!("PUSH {} not implemented yet.", "local");
-                            line_asm_code = format!("");
+                            // Implement push local.
+                            // local is RAM[1]
+                            line_asm_code = format!(
+                                "@{}\nD=A\n@1\nA=D+M\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1",
+                                value
+                            );
+                            machine_code.push(line_asm_code);
                         }
                         "static" => {
                             println!("PUSH {} not implemented yet.", "static");
                         }
                         "constant" => {
+                            // Constants are well, constants! So the value is being pushed here.
                             line_asm_code = format!("@{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1", value);
                             machine_code.push(line_asm_code);
                         }
                         "this" => {
-                            println!("PUSH {} not implemented yet.", "this");
+                            line_asm_code = format!(
+                                // this is RAM[3]
+                                "@{}\nD=A\n@3\nA=D+M\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1",
+                                value
+                            );
+                            machine_code.push(line_asm_code);
                         }
                         "that" => {
-                            println!("PUSH {} not implemented yet.", "that");
+                            line_asm_code = format!(
+                                // that is RAM[4]
+                                "@{}\nD=A\n@4\nA=D+M\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1",
+                                value
+                            );
+                            machine_code.push(line_asm_code);
                         }
                         "pointer" => {
                             println!("PUSH {} not implemented yet.", "pointer");
                         }
                         "temp" => {
-                            println!("PUSH {} not implemented yet.", "temp");
+                            line_asm_code = format!(
+                                // TEMP is a segment not address.
+                                // RAM[5]-RAM[12]. That being said, any accesss to temp[i] should be
+                                // translated into temp[i+5]
+                                "@5\nD=A\n@{}\nD=D+A\nA=D\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1",
+                                value
+                            );
+                            machine_code.push(line_asm_code);
                         }
                         _ => {}
                     }
@@ -167,10 +195,20 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                     // For Pop off the stack.
                     match segment.as_str() {
                         "argument" => {
-                            println!("POP {} not implemented yet.", "argument");
+                            // Similar implementation. 
+                            line_asm_code = format!(
+                                "@SP\nM=M-1\nA=M\nD=M\n@13\nM=D\n@{}\nD=A\n@2\nD=D+M\n@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D",
+                                value
+                            );
+                            machine_code.push(line_asm_code);
                         }
                         "local" => {
-                            line_asm_code = format!("@{}\nD=A\n@LOCAL\nA=M\n", value);
+                            // Pop off the stack and put it into said local memory segment
+                            // Here RAM[13] and RAM[14] are used as temporary assignment.
+                            line_asm_code = format!(
+                                "@SP\nM=M-1\nA=M\nD=M\n@13\nM=D\n@{}\nD=A\n@1\nD=D+M\n@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D",
+                                value
+                            );
                             machine_code.push(line_asm_code);
                         }
                         "static" => {
@@ -180,16 +218,30 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>) -> Vec<String> {
                             println!("POP {} not implemented yet.", "constant");
                         }
                         "this" => {
-                            println!("POP {} not implemented yet.", "this");
+                            line_asm_code = format!(
+                                "@SP\nM=M-1\nA=M\nD=M\n@13\nM=D\n@{}\nD=A\n@3\nD=D+M\n@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D",
+                                value
+                            );
+                            machine_code.push(line_asm_code);
                         }
                         "that" => {
-                            println!("POP {} not implemented yet.", "that");
+                            line_asm_code = format!(
+                                "@SP\nM=M-1\nA=M\nD=M\n@13\nM=D\n@{}\nD=A\n@4\nD=D+M\n@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D",
+                                value
+                            );
+                            machine_code.push(line_asm_code);
                         }
                         "pointer" => {
                             println!("POP {} not implemented yet.", "pointer");
                         }
                         "temp" => {
-                            println!("POP {} not implemented yet.", "temp");
+                            // Temp is going to be differennt implementation than others. 
+                            // As temp is accessed differently by adding 5 to the index.
+                            line_asm_code = format!(
+                                "@SP\nM=M-1\nA=M\nD=M\n@13\nM=D\n@5\nD=A\n@{}\nD=A+D\n@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D",
+                                value
+                            );
+                            machine_code.push(line_asm_code);
                         }
                         _ => {}
                     }

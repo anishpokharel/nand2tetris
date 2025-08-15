@@ -9,6 +9,7 @@ pub fn parse_lines(source: String) -> Vec<VmCommand> {
         if stripped.is_empty() {
             continue;
         } else {
+           println!("{}", stripped);
            categorized_commands.push(code_writer::categorize_commands(stripped));
         }
     }
