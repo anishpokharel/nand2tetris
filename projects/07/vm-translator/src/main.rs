@@ -16,7 +16,7 @@ fn main() {
     // Read the file name from the arguments.
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
-        println!("Usage: translator <file-name.vm> or <directory>");
+        println!("Usage: translator <file-name.vm> or <directory-path>");
         return;
     }
     let argument: &String = &args[1];
@@ -24,7 +24,8 @@ fn main() {
 
     if regex.is_match(&argument) {
         // Argument contains file with extension.
-        if argument.contains(".vm") {
+        if argument.ends_with(".vm") {
+            println!("Single file detected.");
             process_single_file(argument);
         } else {
             println!("The file extension should end in .vm");
