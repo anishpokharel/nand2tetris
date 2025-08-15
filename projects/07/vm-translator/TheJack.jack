@@ -1,0 +1,46 @@
+/** 
+ * Draws the first N Fibonacci numbers on the screen, starting at the top-left.
+ * Uses Output.printInt() to write the numbers, separated by spaces.
+ */
+class Test{
+    function void main() {
+        var int n, i, a, b, c;
+
+        let n = 10;
+        let a = 0;
+        let b = 1;
+	
+
+        do Output.moveCursor(0, 0);
+        do Output.printInt(a);
+        do Output.printChar(32);  // space
+        do Output.printInt(b);
+        do Output.printChar(32);  // space
+
+        let i = 3;
+        while (i < n + 1) {       // Jack has no '<='
+            let c = a + b;
+            let a = b;
+            let b = c;
+
+            do Output.printInt(c);
+            do Output.printChar(32);
+
+            let i = i + 1;
+        }
+
+        return;
+    }
+
+    function void tester() {
+    var int a, b;
+    let a = 10;
+    let b = 20;
+    do Output.print(a & b);
+    return;
+
+
+
+
+    }
+}

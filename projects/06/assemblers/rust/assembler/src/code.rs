@@ -24,11 +24,11 @@ pub fn instruction_to_bin(instruction: &Instruction, symbol_table: &mut SymbolTa
             if !value_exists {
                 // If the value does not exist, add it to the symbol table
                 let address = symbol_table.add_variable(value.clone());
-                return format!("{:015b}", address);
+                return format!("{:016b}", address);
             } else {
                 // If the value exists, get the address from the symbol table
                 let address = symbol_table.get_address(value).unwrap();
-                return format!("{:015b}", address);
+                return format!("{:016b}", address);
             }
         }
     }

@@ -1,0 +1,42 @@
+# Ignore compiled files and target directory
+/target/
+
+# Ignore temporary files and build artifacts
+**/*.rs.bk
+**/*.swp
+**/*.swo
+
+# Ignore backup files (created by editors)
+*~
+*.bak
+*.tmp
+
+# Ignore Cargo lock file for libraries (not for binaries!)
+# If you're writing a **library**, uncomment the next line
+# Cargo.lock
+
+# Ignore IDE/editor-specific files
+
+# VS Code
+.vscode/
+
+# IntelliJ/RustRover/CLion
+.idea/
+*.iml
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Linux
+*~
+
+# Ignore coverage/output/test tools
+/coverage/
+/grcov/
+/tarpaulin-report/
+
+# Ignore local dev/test settings
+.env
