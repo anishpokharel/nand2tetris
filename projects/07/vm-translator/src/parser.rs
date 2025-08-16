@@ -5,7 +5,8 @@ pub fn parse_lines(source: String) -> Vec<VmCommand> {
     // Strip away comments & empty lines.
     let mut categorized_commands= Vec::new();
     for line in source.lines() {
-        let stripped = strip_comment(&line);
+        let mut stripped = strip_comment(&line);
+        stripped = stripped.trim();
         if stripped.is_empty() {
             continue;
         } else {
@@ -19,7 +20,7 @@ pub fn parse_lines(source: String) -> Vec<VmCommand> {
 fn strip_comment(line: &str) -> &str {
     let trimmed = line.trim();
     match trimmed.find("//") {
-        Some(index) => &line[..index],
+        Some(index) => &trimmed[..index],
         None => trimmed,
     }
 }

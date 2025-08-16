@@ -52,9 +52,14 @@ pub fn categorize_commands(command: &str) -> VmCommand {
         || command.starts_with("not")
     {
         vm_command = VmCommand::AirthLogic(command.to_string());
-    } else if command.starts_with("function") {
+    } else if command.starts_with("function")
+        || command.starts_with("return")
+        || command.starts_with("call")
+    {
         return VmCommand::Function(command.to_string());
     } else {
+        // VM Branching commands are, goto, if-goto and label
+        // Anything else should be invalid VM Command.
         return VmCommand::Branching(command.to_string());
     }
     return vm_command;
@@ -125,7 +130,10 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         machine_code.push(line_asm_code);
                     }
                     _ => {
-                        println!("This should not be printed in console. Investigate!")
+                        println!(
+                            "This should not be printed in console. Investigate! {} TEST",
+                            command
+                        );
                     }
                 }
             }
@@ -154,10 +162,8 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                             machine_code.push(line_asm_code);
                         }
                         "static" => {
-                            line_asm_code = format!(
-                                "@{}.{}\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1", f_name, 
-                                value
-                            );
+                            line_asm_code =
+                                format!("@{}.{}\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1", f_name, value);
                             machine_code.push(line_asm_code);
                         }
                         "constant" => {
@@ -199,7 +205,12 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                                     );
                                     machine_code.push(line_asm_code);
                                 }
-                                _ => {}
+                                _ => {
+                                    println!(
+                                        "This should not be printed in console. Investigate!{}",
+                                        command
+                                    );
+                                }
                             }
                         }
                         "temp" => {
@@ -235,14 +246,12 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                             machine_code.push(line_asm_code);
                         }
                         "static" => {
-                            line_asm_code = format!(
-                                "@SP\nM=M-1\nA=M\nD=M\n@{}.{}\nM=D",
-                                f_name, value
-                            );
+                            line_asm_code =
+                                format!("@SP\nM=M-1\nA=M\nD=M\n@{}.{}\nM=D", f_name, value);
                             machine_code.push(line_asm_code);
                         }
                         "constant" => {
-                        // There is no implementation for this.
+                            // There is no implementation for this.
                         }
                         "this" => {
                             line_asm_code = format!(
@@ -278,19 +287,54 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                             );
                             machine_code.push(line_asm_code);
                         }
-                        _ => {}
+                        _ => {
+                            println!("This should not be printed in console. POP!{}", command);
+                        }
                     }
                 }
             }
-            VmCommand::Function(_command) => {
-                println!("Alas! function not implemented, yet.");
+            VmCommand::Function(command) => {
+                let splitted_command: Vec<&str> = command.split(" ").collect();
+                if splitted_command.len() < 2 {
+                    let function_name = splitted_command[0];
+                    println!("RETURN??? {}", function_name);
+                } else {
+                    let function_name = splitted_command[0];
+                    let signature = splitted_command[1];
+                    println!(
+                        "Alas! function not implemented, yet. {} {}",
+                        function_name, signature
+                    );
+                }
                 line_asm_code = format!("// Waiting for implementation of function call.");
                 machine_code.push(line_asm_code);
             }
-            VmCommand::Branching(_command) => {
-                println!("Alas! branching not implemented, yet.");
-                line_asm_code = format!("// Waiting for implementation of branching.");
-                machine_code.push(line_asm_code);
+            VmCommand::Branching(command) => {
+                // Branching commands are two words each line.
+                // First is pre_op second the post_op is the lable to goto.
+                let splitted_command: Vec<&str> = command.split(" ").collect();
+                let pre_op = splitted_command[0];
+                let post_op = splitted_command[1];
+
+                match pre_op {
+                    "goto" => {
+                        // Unconditional jump with 0;JMP
+                        line_asm_code = format!("@{}\n0;JMP", post_op);
+                        machine_code.push(line_asm_code);
+                    }
+                    "if-goto" => {
+                        // Stack's topmost value is popped
+                        // If the value is NOT ZERO Jump to label
+                        // If value is zero 
+                        line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@{}\nD;JNE", post_op);
+                        machine_code.push(line_asm_code);
+                    }
+                    "label" => {
+                        line_asm_code = format!("({})", post_op);
+                        machine_code.push(line_asm_code);
+                    }
+                    _ => {}
+                }
             }
         }
     }
