@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self};
 
 #[derive(Debug, Clone)]
 pub enum VmCommand {
@@ -56,11 +56,11 @@ pub fn categorize_commands(command: &str) -> VmCommand {
         || command.starts_with("return")
         || command.starts_with("call")
     {
-        return VmCommand::Function(command.to_string());
+        vm_command = VmCommand::Function(command.to_string());
     } else {
         // VM Branching commands are, goto, if-goto and label
         // Anything else should be invalid VM Command.
-        return VmCommand::Branching(command.to_string());
+        vm_command = VmCommand::Branching(command.to_string());
     }
     return vm_command;
 }
@@ -72,7 +72,7 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
     machine_code.push(initiliaze_stack_base);
 
     for (i, command) in vm_command.iter().enumerate() {
-        let line_asm_code: String;
+        let mut line_asm_code: String;
         match command {
             VmCommand::AirthLogic(command) => {
                 match command.as_str() {
@@ -131,7 +131,7 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                     }
                     _ => {
                         println!(
-                            "This should not be printed in console. Investigate! {} TEST",
+                            "This should not be printed in console. Investigate! {} Arithmetic.",
                             command
                         );
                     }
@@ -223,7 +223,9 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                             );
                             machine_code.push(line_asm_code);
                         }
-                        _ => {}
+                        _ => {
+                            println!("This should not be printed in console. PUSH!{}", command);
+                        }
                     }
                 } else {
                     // For Pop off the stack.
@@ -282,7 +284,7 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                             // Temp is going to be differennt implementation than others.
                             // As temp is accessed differently by adding 5 to the index.
                             line_asm_code = format!(
-                                "@SP\nM=M-1\nA=M\nD=M\n@13\nM=D\n@5\nD=A\n@{}\nD=A+D\n@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D",
+                                "@SP\nM=M-1\nA=M\nD=M\n@13\nM=D\n@5\nD=A\n@{}\nD=D+A\n@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D",
                                 value
                             );
                             machine_code.push(line_asm_code);
@@ -295,19 +297,62 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
             }
             VmCommand::Function(command) => {
                 let splitted_command: Vec<&str> = command.split(" ").collect();
-                if splitted_command.len() < 2 {
-                    let function_name = splitted_command[0];
-                    println!("RETURN??? {}", function_name);
-                } else {
-                    let function_name = splitted_command[0];
-                    let signature = splitted_command[1];
-                    println!(
-                        "Alas! function not implemented, yet. {} {}",
-                        function_name, signature
-                    );
+                let function_type = splitted_command[0];
+                match function_type {
+                    "function" => {
+                        let function_name = splitted_command[1];
+                        // n_vars are number of variables that the calee accepts.
+                        // push 0 n_var times into the stack?
+                        // Is it the stack where you need to push or is it somewhere else?
+                        let mut n_vars: u32 = splitted_command[2].parse().unwrap();
+                        line_asm_code = format!("// Function declaration");
+                        machine_code.push(line_asm_code);
+                        line_asm_code = format!("({}.{})", file_name, function_name);
+                        machine_code.push(line_asm_code);
+
+                        while n_vars > 0 {
+                            n_vars -= 1;
+                            // push zero to where? Repeat n times, push zero.
+                            line_asm_code = format!("@0\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1");
+                            machine_code.push(line_asm_code);
+                        }
+                        line_asm_code = format!("// END function declaration");
+                        machine_code.push(line_asm_code);
+                    }
+                    "call" => {
+                        let function_name = splitted_command[1];
+                        // Figure out what to do with n_args
+                        // For now, I am thinking increasing the stack pointer by number of args.
+                        // Think about it logically.
+
+                        // A call command generates code that saves the frame of the caller on the stack 
+                        // and jumps to execute the calee.
+                        let n_args: u32 = splitted_command[2].parse().unwrap();
+                        line_asm_code = format!("// Function CALL!");
+                        machine_code.push(line_asm_code);
+                        line_asm_code = format!(
+                            "@{}\nD=A\n@SP\nD=M-D\n@ARG\nM=D\n@{}.{}\n0;JMP",
+                            n_args, file_name, function_name
+                        );
+                        machine_code.push(line_asm_code);
+                        line_asm_code = format!("//END function CALL!");
+                        machine_code.push(line_asm_code);
+                    }
+                    "return" => {
+                        // Return terminates the current function and returns control to the caller.
+                        //     How does it do it? Figure it out. Read the book. 
+                        // Also remember that return ALWAYS returns a value. So return value must be
+                        // pushed into the stack for this rule to satisfy. 
+
+                        // Also, a lot is going on when a call returns from a function and passes back to the caller.
+                        // Figure out the return address.
+                        line_asm_code = format!("@RETURN_ADDRESS\nD=M\nA=D\n0;JMP");
+                        machine_code.push(line_asm_code);
+                    }
+                    _ => {
+                        println!("This should not be printed. Function. {}", command);
+                    }
                 }
-                line_asm_code = format!("// Waiting for implementation of function call.");
-                machine_code.push(line_asm_code);
             }
             VmCommand::Branching(command) => {
                 // Branching commands are two words each line.
@@ -325,7 +370,7 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                     "if-goto" => {
                         // Stack's topmost value is popped
                         // If the value is NOT ZERO Jump to label
-                        // If value is zero 
+                        // If value is zero, well just execute next instruction.
                         line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@{}\nD;JNE", post_op);
                         machine_code.push(line_asm_code);
                     }
@@ -333,7 +378,9 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         line_asm_code = format!("({})", post_op);
                         machine_code.push(line_asm_code);
                     }
-                    _ => {}
+                    _ => {
+                        println!("This should not be printed int he console. Branching.")
+                    }
                 }
             }
         }
