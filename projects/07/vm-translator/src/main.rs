@@ -18,6 +18,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
         println!("Usage: translator <file-name.vm> or <directory-path>");
+        exiting_sequence(true);
         return;
     }
     let argument: &String = &args[1];
@@ -30,9 +31,11 @@ fn main() {
             process_single_file(argument);
         } else {
             if argument.ends_with("..") {
+                println!("Directory detected. Scanning...");
                 translate_directory(argument);
             } else {
                 println!("The file extension should end in .vm");
+                exiting_sequence(true);
                 return;
             }
         }
@@ -43,23 +46,52 @@ fn main() {
     }
 }
 
+fn exiting_sequence(is_force_exit: bool) {
+    if is_force_exit {
+        println!("Please fix before re-running. \nExiting.. Bye.");
+    } else {
+        println!("Thank you for using the translator.. Bye.");
+    }
+}
+
 fn translate_directory(directory_url: &String) {
     // Scan the given directory for files ending in .vm
     let mut files: Vec<String> = Vec::new();
 
-    for entry in fs::read_dir(directory_url).unwrap() {
-        let entry = entry.unwrap();
-        let file_name = entry.file_name().into_string().unwrap_or_default();
-        if file_name.ends_with(".vm") {
-            println!("Found .vm file -> '{}'", file_name);
-            files.push(file_name);
+    match fs::read_dir(directory_url) {
+        Ok(entries) => {
+            for entry in entries {
+                match entry {
+                    Ok(et) => {
+                        let file_name = et.file_name().into_string().unwrap_or_default();
+                        if file_name.ends_with(".vm") {
+                            println!("Found .vm file -> '{}'", file_name);
+                            files.push(file_name);
+                        }
+                    }
+                    Err(err) => {
+                        println!("Error occured while reading entry error-> {}", err);
+                        exiting_sequence(true);
+                    }
+                }
+            }
+        }
+        Err(err) => {
+            println!(
+                "Error occured reading directory '{}' error -> {}",
+                directory_url, err
+            );
+            exiting_sequence(true);
+            return;
         }
     }
+
     if files.is_empty() {
         println!(
             "No .vm files detected in the given directory '{}'",
             directory_url
         );
+        exiting_sequence(true);
         return;
     } else {
         // Process each .vm file following the same algo.
@@ -97,12 +129,13 @@ fn translate_directory(directory_url: &String) {
         }
         // A lot of fixings needed here.
         // This project is going to take a while, while I learn RUST.
-        println!("{} working...", output_file_name);
         let mut output_file =
             File::create(output_file_name.clone()).expect("Failed to open output file.");
         for code in combined_machine_code {
             writeln!(output_file, "{}", code).expect("Failed to write to output file.");
         }
+        println!("{} Processed...", output_file_name);
+        exiting_sequence(false);
     }
 }
 
@@ -132,31 +165,35 @@ fn handle_multiple_files(file_path: &str) -> Vec<String> {
 fn process_single_file(file_name: &String) {
     println!("{} processing file.", file_name);
     let argument = file_name;
-    // single file selected
-    let message = format!(
-        "Failed to open input file {} please check file path and permissions.",
-        argument.clone()
-    );
-    let mut input_file = File::open(argument.clone()).expect(&message);
-    let mut contents = String::new();
 
-    input_file
-        .read_to_string(&mut contents)
-        .expect("Failed to read input file.");
-    // Now the parser should be called with the contents of the file.
-    let parsed_commands = parser::parse_lines(contents);
-    let machine_code: Vec<String>;
-    machine_code = generate_machine_code(
-        parsed_commands,
-        argument.replace(".vm", "").replace("/", ""),
-    );
-    let output_file_name = argument.replace(".vm", ".asm");
-    let mut output_file =
-        File::create(output_file_name.clone()).expect("Failed to open output file.");
-    for code in machine_code {
-        writeln!(output_file, "{}", code).expect("Failed to write to output file.");
+    let mut contents = String::new();
+    match File::open(argument.clone()) {
+        Ok(read_file) => {
+            let mut input_file = read_file;
+            input_file
+                .read_to_string(&mut contents)
+                // Here instead of using arguments.clone display the actual name of the file in question.
+                .expect(format!("Failed to read contents... {}", argument.clone()).as_str());
+            let parsed_commands = parser::parse_lines(contents);
+            let machine_code: Vec<String>;
+            machine_code = generate_machine_code(
+                parsed_commands,
+                argument.replace(".vm", "").replace("/", ""),
+            );
+            let output_file_name = argument.replace(".vm", ".asm");
+            let mut output_file =
+                File::create(output_file_name.clone()).expect("Failed to open output file.");
+            for code in machine_code {
+                writeln!(output_file, "{}", code).expect("Failed to write to output file.");
+            }
+            println!("{} processed.", output_file_name);
+            exiting_sequence(false);
+        }
+        Err(err) => {
+            println!("Error reading file. Does it exists? Error-> {}", err);
+            exiting_sequence(true);
+        }
     }
-    println!("{} processed.", output_file_name)
 }
 
 fn get_output_file_name(directory_to_process: &String) -> String {

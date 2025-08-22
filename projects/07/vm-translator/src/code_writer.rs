@@ -304,6 +304,8 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         // n_vars are number of variables that the calee accepts.
                         // push 0 n_var times into the stack?
                         // Is it the stack where you need to push or is it somewhere else?
+
+                        // Function command generates code that initializes the local variables of the calee.
                         let mut n_vars: u32 = splitted_command[2].parse().unwrap();
                         line_asm_code = format!("// Function declaration");
                         machine_code.push(line_asm_code);
@@ -312,7 +314,7 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
 
                         while n_vars > 0 {
                             n_vars -= 1;
-                            // push zero to where? Repeat n times, push zero.
+                            // push zero to where? To the stack! Repeat n times, push zero.
                             line_asm_code = format!("@0\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1");
                             machine_code.push(line_asm_code);
                         }
@@ -321,32 +323,97 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                     }
                     "call" => {
                         let function_name = splitted_command[1];
-                        // Figure out what to do with n_args
-                        // For now, I am thinking increasing the stack pointer by number of args.
-                        // Think about it logically.
-
                         // A call command generates code that saves the frame of the caller on the stack 
                         // and jumps to execute the calee.
+
+                        // You are going to have to save the frame before calling. 
+                        // Also remember, the next instruction is where it should come back from return.
+
                         let n_args: u32 = splitted_command[2].parse().unwrap();
                         line_asm_code = format!("// Function CALL!");
                         machine_code.push(line_asm_code);
-                        line_asm_code = format!(
-                            "@{}\nD=A\n@SP\nD=M-D\n@ARG\nM=D\n@{}.{}\n0;JMP",
-                            n_args, file_name, function_name
-                        );
+
+                        // push returnaddress
+                        line_asm_code = format!("@RET_{}.{}.{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1", file_name, function_name, i);
                         machine_code.push(line_asm_code);
+
+                        // push LCL
+                        line_asm_code = format!("@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
+                        machine_code.push(line_asm_code);
+
+                        // push ARG
+                        line_asm_code = format!("@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
+                        machine_code.push(line_asm_code);
+
+                        // push THIS
+                        line_asm_code = format!("@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
+                        machine_code.push(line_asm_code);
+
+                        // push THAT
+                        line_asm_code = format!("@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
+                        machine_code.push(line_asm_code);
+
+                        // reposition ARG = SP-5-n_args
+                        line_asm_code = format!("@{}\nD=A\n@SP\nD=M-D\n@5\nD=D-A\n@ARG\nM=D", n_args);
+                        machine_code.push(line_asm_code);
+
+                        // reposition LCL = SP
+                        line_asm_code = format!("@SP\nD=M\n@LCL\nM=D");
+                        machine_code.push(line_asm_code);
+
+                        // then goto the calee..
+                        line_asm_code = format!("@{}.{}\n0;JMP", file_name, function_name);
+                        machine_code.push(line_asm_code);
+
+                        // INJECT (returnAddress) label into the code.
+                        line_asm_code = format!("(RET_{}.{}.{})", file_name, function_name, i);
+                        machine_code.push(line_asm_code);
+
                         line_asm_code = format!("//END function CALL!");
                         machine_code.push(line_asm_code);
                     }
                     "return" => {
-                        // Return terminates the current function and returns control to the caller.
-                        //     How does it do it? Figure it out. Read the book. 
-                        // Also remember that return ALWAYS returns a value. So return value must be
-                        // pushed into the stack for this rule to satisfy. 
 
-                        // Also, a lot is going on when a call returns from a function and passes back to the caller.
-                        // Figure out the return address.
-                        line_asm_code = format!("@RETURN_ADDRESS\nD=M\nA=D\n0;JMP");
+                        line_asm_code = format!("//Begin return!");
+                        machine_code.push(line_asm_code);
+
+                        // frame = LCL ;; frame is a temporary variable.
+                        line_asm_code = format!("@LCL\nD=M\n@13\nM=D");   // 13 is temporary variable frame.
+                        machine_code.push(line_asm_code);
+
+                        // returnAddress = frame - 5 ;; puts the return address in temporary variable.
+                        line_asm_code = format!("@13\nD=M\n@5\nD=D-A\n@14\nM=D"); // 14 is temporary return address.
+                        machine_code.push(line_asm_code);
+
+                        // *ARG = pop()
+                        line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@ARG\nA=M\nM=D");
+                        machine_code.push(line_asm_code);
+
+                        // SP = ARG + 1
+                        line_asm_code = format!("@ARG\nD=M\n@SP\nM=D+1");
+                        machine_code.push(line_asm_code);
+
+                        // THAT = frame - 1
+                        line_asm_code = format!("@13\nD=M\n@THAT\nM=D-1");
+                        machine_code.push(line_asm_code);
+
+                        // THIS = frame - 2
+                        line_asm_code = format!("@13\nD=M\n@2\nD=D-A\n@THIS\nM=D");
+                        machine_code.push(line_asm_code);
+
+                        // ARG = frame - 3 
+                        line_asm_code = format!("@13\nD=M\n@3\nD=D-A\n@ARG\nM=D");
+                        machine_code.push(line_asm_code);
+
+                        // LCL = frame - 4
+                        line_asm_code = format!("@13\nD=M\n@4\nD=D-A\n@LCL\nM=D");
+                        machine_code.push(line_asm_code);
+
+                        // goto returnAddress
+                        line_asm_code = format!("@14\nA=M\n0;JMP");
+                        machine_code.push(line_asm_code);
+
+                        line_asm_code = format!("//End return!");
                         machine_code.push(line_asm_code);
                     }
                     _ => {
