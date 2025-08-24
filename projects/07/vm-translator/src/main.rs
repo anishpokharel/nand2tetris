@@ -45,10 +45,15 @@ fn main() {
         translate_directory(argument);
     }
 }
-
+/// Just prints the exit message. 
+/// ```
+/// is_force_exit: bool
+/// ```
+/// Where bool is indication if it's a forced exit because of errors. 
 fn exiting_sequence(is_force_exit: bool) {
     if is_force_exit {
         println!("Please fix before re-running. \nExiting.. Bye.");
+        panic!("Exiting due to error in sequence.");
     } else {
         println!("Thank you for using the translator.. Bye.");
     }
