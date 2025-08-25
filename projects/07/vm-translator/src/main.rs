@@ -1,6 +1,3 @@
-/* VM Translator is basically a program that reads the VM commands,
-  one command at a time, and translates each command into Hack Instructions.
-*/
 mod code_writer;
 mod parser;
 
@@ -10,10 +7,12 @@ use std::fs;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
+use std::time::Instant;
 
 use crate::code_writer::generate_machine_code;
 
 fn main() {
+    let start = Instant::now();
     // Read the file name from the arguments.
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
@@ -44,12 +43,14 @@ fn main() {
         // Implement directory way of handling things.
         translate_directory(argument);
     }
+    let duration = start.elapsed();
+    println!("Runtime: {:?}", duration);
 }
-/// Just prints the exit message. 
+/// Just prints the exit message.
 /// ```
 /// is_force_exit: bool
 /// ```
-/// Where bool is indication if it's a forced exit because of errors. 
+/// Where bool is indication if it's a forced exit because of errors.
 fn exiting_sequence(is_force_exit: bool) {
     if is_force_exit {
         println!("Please fix before re-running. \nExiting.. Bye.");
@@ -99,9 +100,9 @@ fn translate_directory(directory_url: &String) {
         exiting_sequence(true);
         return;
     } else {
-        // Process each .vm file following the same algo.
         let mut output_file_name: String = "WRONG_FILENAME".to_string();
         let mut combined_machine_code: Vec<String> = Vec::new();
+        let mut first_file: bool = true;
         for file in files {
             let full_file_path;
             if directory_url.eq(".") {
@@ -130,10 +131,13 @@ fn translate_directory(directory_url: &String) {
                     get_output_file_name(directory_url)
                 );
             }
-            combined_machine_code.extend(handle_multiple_files(&full_file_path));
+            combined_machine_code.extend(handle_multiple_files(
+                &output_file_name,
+                &full_file_path,
+                first_file,
+            ));
+            first_file = false;
         }
-        // A lot of fixings needed here.
-        // This project is going to take a while, while I learn RUST.
         let mut output_file =
             File::create(output_file_name.clone()).expect("Failed to open output file.");
         for code in combined_machine_code {
@@ -144,7 +148,7 @@ fn translate_directory(directory_url: &String) {
     }
 }
 
-fn handle_multiple_files(file_path: &str) -> Vec<String> {
+fn handle_multiple_files(output_file: &str, file_path: &str, first_file: bool) -> Vec<String> {
     let message = format!(
         "Failed to open input file {} please check file path and permissions.",
         &file_path
@@ -162,7 +166,9 @@ fn handle_multiple_files(file_path: &str) -> Vec<String> {
 
     machine_code.extend(generate_machine_code(
         parsed_commands,
+        output_file.replace(".asm", "").replace("/", ""),
         file_path.replace(".vm", "").replace("/", ""),
+        first_file,
     ));
     return machine_code;
 }
@@ -184,6 +190,8 @@ fn process_single_file(file_name: &String) {
             machine_code = generate_machine_code(
                 parsed_commands,
                 argument.replace(".vm", "").replace("/", ""),
+                argument.replace(".vm", "").replace("/", ""),
+                true,
             );
             let output_file_name = argument.replace(".vm", ".asm");
             let mut output_file =

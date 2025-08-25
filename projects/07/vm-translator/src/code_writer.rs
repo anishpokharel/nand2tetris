@@ -67,11 +67,21 @@ pub fn categorize_commands(command: &str) -> VmCommand {
     return vm_command;
 }
 
-pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> Vec<String> {
+pub fn generate_machine_code(
+    vm_command: Vec<VmCommand>,
+    output_file_name: String,
+    input_file_name: String,
+    include_bootstrap_code: bool,
+) -> Vec<String> {
     let mut machine_code = Vec::new();
-    let f_name = file_name.as_str();
-    let initiliaze_stack_base = "@256\nD=A\n@SP\nM=D".to_string();
-    machine_code.push(initiliaze_stack_base);
+    let f_name = input_file_name.as_str();
+
+    if include_bootstrap_code {
+        let initiliaze_stack_base = "@256\nD=A\n@SP\nM=D".to_string();
+        machine_code.push(initiliaze_stack_base);
+        // Call Sys.init in the bootstrap code.
+        machine_code.extend(call_sys_init(0, output_file_name.clone()));
+    }
 
     for (i, command) in vm_command.iter().enumerate() {
         let mut line_asm_code: String;
@@ -79,8 +89,6 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
             VmCommand::AirthLogic(command) => {
                 match command.as_str() {
                     "add" => {
-                        // Pop x & y from stack, add them up and put it back on stack.
-                        // Resulting operation will decrease stack size by 1.
                         line_asm_code = "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nD=D+M\n@SP\nA=M\nM=D\n@SP\nM=M+1".to_string();
                         machine_code.push(line_asm_code);
                     }
@@ -95,9 +103,6 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         machine_code.push(line_asm_code);
                     }
                     "eq" => {
-                        // Basically, it's a small algo to check if given operands are equal.
-                        // Checks if both operands negates themselves to zero, if yes equals, else not.
-                        // Included index to make the label unique to each vm command.
                         line_asm_code = format!(
                             "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nA=M\nD=D-A\n@EQ_RETURN.{}\nD;JEQ\n@SP\nA=M\nM=0\n@SP\nM=M+1\n@END_EQ.{}\n0;JMP\n(EQ_RETURN.{})\n@SP\nA=M\nM=-1\n@SP\nM=M+1\n@END_EQ.{}\n0;JMP\n(END_EQ.{})\n@SP",
                             i, i, i, i, i
@@ -155,8 +160,6 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                             machine_code.push(line_asm_code);
                         }
                         "local" => {
-                            // Implement push local.
-                            // local is RAM[1]
                             line_asm_code = format!(
                                 "@{}\nD=A\n@1\nA=D+M\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1",
                                 value
@@ -169,13 +172,11 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                             machine_code.push(line_asm_code);
                         }
                         "constant" => {
-                            // Constants are well, constants! So the value is being pushed here.
                             line_asm_code = format!("@{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1", value);
                             machine_code.push(line_asm_code);
                         }
                         "this" => {
                             line_asm_code = format!(
-                                // this is RAM[3]
                                 "@{}\nD=A\n@3\nA=D+M\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1",
                                 value
                             );
@@ -183,7 +184,6 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         }
                         "that" => {
                             line_asm_code = format!(
-                                // that is RAM[4]
                                 "@{}\nD=A\n@4\nA=D+M\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1",
                                 value
                             );
@@ -192,7 +192,6 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         "pointer" => {
                             match value.as_str() {
                                 "0" => {
-                                    // pointer 0 is THIS Pointer, which is RAM[3]
                                     line_asm_code = format!(
                                         // this is RAM[3]
                                         "@3\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1"
@@ -200,11 +199,7 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                                     machine_code.push(line_asm_code);
                                 }
                                 "1" => {
-                                    // pointer 1 is THAT Pointer, which is RAM[4]
-                                    line_asm_code = format!(
-                                        // this is RAM[3]
-                                        "@4\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1"
-                                    );
+                                    line_asm_code = format!("@4\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
                                     machine_code.push(line_asm_code);
                                 }
                                 _ => {
@@ -217,9 +212,6 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         }
                         "temp" => {
                             line_asm_code = format!(
-                                // TEMP is a segment not address.
-                                // RAM[5]-RAM[12]. That being said, any accesss to temp[i] should be
-                                // translated into temp[i+5]
                                 "@5\nD=A\n@{}\nD=D+A\nA=D\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1",
                                 value
                             );
@@ -230,10 +222,8 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         }
                     }
                 } else {
-                    // For Pop off the stack.
                     match segment.as_str() {
                         "argument" => {
-                            // Similar implementation.
                             line_asm_code = format!(
                                 "@SP\nM=M-1\nA=M\nD=M\n@13\nM=D\n@{}\nD=A\n@2\nD=D+M\n@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D",
                                 value
@@ -256,6 +246,7 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         }
                         "constant" => {
                             // There is no implementation for this.
+                            // Can't pop a constant.
                         }
                         "this" => {
                             line_asm_code = format!(
@@ -283,8 +274,7 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                             _ => {}
                         },
                         "temp" => {
-                            // Temp is going to be differennt implementation than others.
-                            // As temp is accessed differently by adding 5 to the index.
+                            // A temp is accessed differently by adding 5 to the index.
                             line_asm_code = format!(
                                 "@SP\nM=M-1\nA=M\nD=M\n@13\nM=D\n@5\nD=A\n@{}\nD=D+A\n@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D",
                                 value
@@ -297,62 +287,41 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                     }
                 }
             }
-            // If this is displayed, you are good to go.
             VmCommand::Function(command) => {
                 let splitted_command: Vec<&str> = command.split(" ").collect();
                 let function_type = splitted_command[0];
                 match function_type {
                     "function" => {
                         let function_name = splitted_command[1];
-                        // n_vars are number of variables that the calee accepts.
-                        // push 0 n_var times into the stack?
-                        // Is it the stack where you need to push or is it somewhere else?
-
-                        // Function command generates code that initializes the local variables of the calee.
                         let mut n_vars: u32 = splitted_command[2].parse().unwrap();
-                        line_asm_code = format!("// Function declaration");
-                        machine_code.push(line_asm_code);
-                        line_asm_code = format!("({}.{})", file_name, function_name);
+                        line_asm_code = format!("({}.{})", output_file_name, function_name);
                         machine_code.push(line_asm_code);
 
                         while n_vars > 0 {
                             n_vars -= 1;
-                            // push zero to where? To the stack! Repeat n times, push zero.
+                            // Push zeros to the stack.
                             line_asm_code = format!("@0\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1");
                             machine_code.push(line_asm_code);
                         }
-                        line_asm_code = format!("// END function declaration");
-                        machine_code.push(line_asm_code);
                     }
                     "call" => {
                         let function_name = splitted_command[1];
 
                         let n_args: u32 = splitted_command[2].parse().unwrap();
-                        line_asm_code = format!("// Function CALL!");
-                        machine_code.push(line_asm_code);
-
-                        line_asm_code = format!("// Push return address!");
-                        machine_code.push(line_asm_code);
 
                         // push returnaddress
-                        line_asm_code = format!("@RET_{}.{}.{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1", file_name, function_name, i);
-                        machine_code.push(line_asm_code);
-
-                        line_asm_code = format!("// Push local!");
+                        line_asm_code = format!(
+                            "@RET_{}.{}.{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1",
+                            output_file_name, function_name, i
+                        );
                         machine_code.push(line_asm_code);
 
                         // push LCL
                         line_asm_code = format!("@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
                         machine_code.push(line_asm_code);
 
-                        line_asm_code = format!("// Push args!");
-                        machine_code.push(line_asm_code);
-
                         // push ARG
                         line_asm_code = format!("@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
-                        machine_code.push(line_asm_code);
-
-                        line_asm_code = format!("// Push this and that!");
                         machine_code.push(line_asm_code);
 
                         // push THIS
@@ -363,75 +332,39 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         line_asm_code = format!("@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
                         machine_code.push(line_asm_code);
 
-                        line_asm_code = format!("// Reposition arg to sp-nargs-5!");
-                        machine_code.push(line_asm_code);
-
                         // reposition ARG = SP-5-n_args
-                        line_asm_code = format!("@{}\nD=A\n@SP\nD=M-D\n@5\nD=D-A\n@ARG\nM=D", n_args);
-                        machine_code.push(line_asm_code);
-
-                        line_asm_code = format!("// Reposition local to sp!");
+                        line_asm_code =
+                            format!("@{}\nD=A\n@SP\nD=M-D\n@5\nD=D-A\n@ARG\nM=D", n_args);
                         machine_code.push(line_asm_code);
 
                         // reposition LCL = SP
                         line_asm_code = format!("@SP\nD=M\n@LCL\nM=D");
                         machine_code.push(line_asm_code);
 
-                        line_asm_code = format!("// Goto callee!");
-                        machine_code.push(line_asm_code);
-
                         // then goto the calee..
-                        line_asm_code = format!("@{}.{}\n0;JMP", file_name, function_name);
-                        machine_code.push(line_asm_code);
-
-                        line_asm_code = format!("// Inject return address!");
+                        line_asm_code = format!("@{}.{}\n0;JMP", output_file_name, function_name);
                         machine_code.push(line_asm_code);
 
                         // INJECT (returnAddress) label into the code.
-                        line_asm_code = format!("(RET_{}.{}.{})", file_name, function_name, i);
-                        machine_code.push(line_asm_code);
-
-                        line_asm_code = format!("// END function CALL!");
+                        line_asm_code =
+                            format!("(RET_{}.{}.{})", output_file_name, function_name, i);
                         machine_code.push(line_asm_code);
                     }
                     "return" => {
-                        // First round of intense debugging, figured out that return is not 
-                        // behaving as it should be behaving. This is the cause of all failures.
-
-                        line_asm_code = format!("// Begin return!");
-                        machine_code.push(line_asm_code);
-
-                        line_asm_code = format!("// Setting frame variable eq to local!");
-                        machine_code.push(line_asm_code);
-
                         // frame = LCL ;; frame is a temporary variable.
-                        line_asm_code = format!("@LCL\nD=M\n@13\nM=D");   // 13 is temporary variable frame.
-                        machine_code.push(line_asm_code);
-
-                        line_asm_code = format!("// Put return address in temp variable RAM[14], which is frame - 5!");
+                        line_asm_code = format!("@LCL\nD=M\n@13\nM=D"); // 13 is temporary variable frame.
                         machine_code.push(line_asm_code);
 
                         // returnAddress = *(frame - 5) ;; puts the return address in temporary variable.
                         line_asm_code = format!("@13\nD=M\n@5\nD=D-A\nA=D\nD=M\n@14\nM=D"); // 14 is temporary return address.
                         machine_code.push(line_asm_code);
 
-                        line_asm_code = format!("// Pop the value from the stack and put it in arg!");
-                        machine_code.push(line_asm_code);
-
                         // *ARG = pop()
-                        // Doubt that this asm code is valid.
-                        // Undoubt it, looks valid to me.
                         line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@ARG\nA=M\nM=D");
-                        machine_code.push(line_asm_code);
-
-                        line_asm_code = format!("// Increase the stack pointer by ARG + 1!");
                         machine_code.push(line_asm_code);
 
                         // SP = ARG + 1
                         line_asm_code = format!("@ARG\nD=M\n@SP\nM=D+1");
-                        machine_code.push(line_asm_code);
-
-                        line_asm_code = format!("// Reposition this and that.!");
                         machine_code.push(line_asm_code);
 
                         // THAT = frame - 1
@@ -442,10 +375,7 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         line_asm_code = format!("@13\nD=M\n@2\nD=D-A\nA=D\nD=M\n@THIS\nM=D");
                         machine_code.push(line_asm_code);
 
-                        line_asm_code = format!("// Reposition arg and lcl!");
-                        machine_code.push(line_asm_code);
-
-                        // ARG = frame - 3 
+                        // ARG = frame - 3
                         line_asm_code = format!("@13\nD=M\n@3\nD=D-A\nA=D\nD=M\n@ARG\nM=D");
                         machine_code.push(line_asm_code);
 
@@ -453,14 +383,8 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         line_asm_code = format!("@13\nD=M\n@4\nD=D-A\nA=D\nD=M\n@LCL\nM=D");
                         machine_code.push(line_asm_code);
 
-                        line_asm_code = format!("// Goto return address that's saved in RAM[14]!");
-                        machine_code.push(line_asm_code);
-
                         // goto returnAddress
                         line_asm_code = format!("@14\nA=M\n0;JMP");
-                        machine_code.push(line_asm_code);
-
-                        line_asm_code = format!("// End return!");
                         machine_code.push(line_asm_code);
                     }
                     _ => {
@@ -469,8 +393,6 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                 }
             }
             VmCommand::Branching(command) => {
-                // Branching commands are two words each line.
-                // First is pre_op second the post_op is the lable to goto.
                 let splitted_command: Vec<&str> = command.split(" ").collect();
                 let pre_op = splitted_command[0];
                 let post_op = splitted_command[1];
@@ -482,9 +404,6 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
                         machine_code.push(line_asm_code);
                     }
                     "if-goto" => {
-                        // Stack's topmost value is popped
-                        // If the value is NOT ZERO Jump to label
-                        // If value is zero, well just execute next instruction.
                         line_asm_code = format!("@SP\nM=M-1\nA=M\nD=M\n@{}\nD;JNE", post_op);
                         machine_code.push(line_asm_code);
                     }
@@ -500,5 +419,52 @@ pub fn generate_machine_code(vm_command: Vec<VmCommand>, file_name: String) -> V
             }
         }
     }
+    return machine_code;
+}
+
+fn call_sys_init(n_args: u32, file_name: String) -> Vec<String> {
+    let mut machine_code = Vec::new();
+    let mut line_asm_code: String;
+    let function_name = "Sys.init";
+
+    // push returnaddress
+    line_asm_code = format!(
+        "@RET_{}.{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1",
+        file_name, function_name
+    );
+    machine_code.push(line_asm_code);
+
+    // push LCL
+    line_asm_code = format!("@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
+    machine_code.push(line_asm_code);
+
+    // push ARG
+    line_asm_code = format!("@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
+    machine_code.push(line_asm_code);
+
+    // push THIS
+    line_asm_code = format!("@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
+    machine_code.push(line_asm_code);
+
+    // push THAT
+    line_asm_code = format!("@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1");
+    machine_code.push(line_asm_code);
+
+    // reposition ARG = SP-5-n_args
+    line_asm_code = format!("@{}\nD=A\n@SP\nD=M-D\n@5\nD=D-A\n@ARG\nM=D", n_args);
+    machine_code.push(line_asm_code);
+
+    // reposition LCL = SP
+    line_asm_code = format!("@SP\nD=M\n@LCL\nM=D");
+    machine_code.push(line_asm_code);
+
+    // then goto the calee..
+    line_asm_code = format!("@{}.{}\n0;JMP", file_name, function_name);
+    machine_code.push(line_asm_code);
+
+    // INJECT (returnAddress) label into the code.
+    line_asm_code = format!("(RET_{}.{})", file_name, function_name);
+    machine_code.push(line_asm_code);
+
     return machine_code;
 }
