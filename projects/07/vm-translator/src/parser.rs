@@ -3,13 +3,14 @@ use crate::code_writer::{self, VmCommand};
 pub fn parse_lines(source: String) -> Vec<VmCommand> {
     // read the source files.
     // Strip away comments & empty lines.
-    let mut categorized_commands= Vec::new();
+    let mut categorized_commands = Vec::new();
     for line in source.lines() {
-        let stripped = strip_comment(&line);
+        let mut stripped = strip_comment(&line);
+        stripped = stripped.trim();
         if stripped.is_empty() {
             continue;
         } else {
-           categorized_commands.push(code_writer::categorize_commands(stripped));
+            categorized_commands.push(code_writer::categorize_commands(stripped));
         }
     }
 
@@ -19,7 +20,7 @@ pub fn parse_lines(source: String) -> Vec<VmCommand> {
 fn strip_comment(line: &str) -> &str {
     let trimmed = line.trim();
     match trimmed.find("//") {
-        Some(index) => &line[..index],
+        Some(index) => &trimmed[..index],
         None => trimmed,
     }
 }

@@ -1,7 +1,9 @@
+// Bootstrap code
 @256
 D=A
 @SP
 M=D
+// End Bootstrap Code
 @111
 D=A
 @SP
@@ -27,28 +29,28 @@ M=M+1
 M=M-1
 A=M
 D=M
-@..MemoryAccessStaticTestStaticTest.8
+@....07MemoryAccessStaticTestStaticTest.8
 M=D
 @SP
 M=M-1
 A=M
 D=M
-@..MemoryAccessStaticTestStaticTest.3
+@....07MemoryAccessStaticTestStaticTest.3
 M=D
 @SP
 M=M-1
 A=M
 D=M
-@..MemoryAccessStaticTestStaticTest.1
+@....07MemoryAccessStaticTestStaticTest.1
 M=D
-@..MemoryAccessStaticTestStaticTest.3
+@....07MemoryAccessStaticTestStaticTest.3
 D=M
 @SP
 A=M
 M=D
 @SP
 M=M+1
-@..MemoryAccessStaticTestStaticTest.1
+@....07MemoryAccessStaticTestStaticTest.1
 D=M
 @SP
 A=M
@@ -68,7 +70,7 @@ A=M
 M=D
 @SP
 M=M+1
-@..MemoryAccessStaticTestStaticTest.8
+@....07MemoryAccessStaticTestStaticTest.8
 D=M
 @SP
 A=M
