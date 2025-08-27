@@ -65,4 +65,10 @@ class Utils {
         }
         return r;
     }
+
+    function char getLatestPressedKey(){
+        var char pressedKey;
+        let pressedKey = Keyboard.keyPressed();
+        return pressedKey;
+    }
 }

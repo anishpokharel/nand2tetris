@@ -1,0 +1,30 @@
+class Canvas {
+    field Snake snake;
+    field Pellets pellets;
+
+    constructor Canvas new(Snake sn, Pellets pl){
+        let snake = sn;
+        let pellets = pl;
+        return this;
+    }
+
+    method Snake getSnake(){
+        return snake;
+    }
+
+    method Pellets getPellets(){
+        return pellets;
+    }
+
+    method void updatePelletLocation(int seed){
+        do pellets.setLocation(seed);
+        return;
+    }
+
+    method boolean checkCollision(){
+        if ((snake.getXLocation() = pellets.getXLocation()) | (snake.getYLocation() = pellets.getYLocation())){
+            return true;
+        }
+        return false;
+    }
+}

@@ -1,9 +1,21 @@
 class Main {
     function void main(){
         var Game game;
-        let game = Game.new();
-        do game.displayMenu();
+        let game = Main.initialSetup();
         do game.run(game);
         return;
+    }
+
+    function Game initialSetup(){
+        var Canvas canvas;
+        var Pellets pellets;
+        var Snake snake;
+        var Game game;
+
+        let pellets = Pellets.new(8848);
+        let snake = Snake.new();
+        let canvas = Canvas.new(snake, pellets);
+        let game = Game.new(canvas);
+        return game;
     }
 }

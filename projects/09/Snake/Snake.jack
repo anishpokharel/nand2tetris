@@ -1,13 +1,110 @@
 class Snake {
-    field int length; 
+    field int length;
+    field int height;
+    field int xPosition;
+    field int yPosition;
+    field char orientation;
+    field int speed;
 
-    constructor Snake new(int len){
-        let length = len;
+    constructor Snake new(){
+        let length = 30;   // Initial length.
+        let height = 3;    // Initial height.
+        let xPosition = 50;
+        let yPosition = 30;
+        let orientation = 85;       // ASCII for capital L to denote Left.
+        let speed = 10;    // Initial speed.
         return this;
     }
 
-    function void eatPellets(Pellets pellets, Snake snake){
+    method void orientate(char orntn){
+        let orientation = orntn;
         return;
     }
 
+    method void moveLeft(Pellets pellets){
+        if ((orientation = 85) | (orientation = 68)){   // 85 is U and 68 is D. Checking if it's already up or down.
+            do orientate(76);
+            do erase();
+            if (xPosition = 0){
+                // In this case, GAME OVER.
+                // But for now, repeat from different position.
+                let xPosition = 100;
+            }
+
+            let xPosition = xPosition - 1;
+            do draw();
+            do shouldEatPellets(pellets);
+            let orientation = 76;
+        }
+        return;
+    }
+
+    method void moveRight(){
+        if ((orientation = 85) | (orientation = 68)){   // 85 is U and 68 is D. Checking if it's already up or down.
+            do erase();
+            if (yPosition = 0){
+                // In this case, GAME OVER.
+                // But for now, repeat from different position.
+                let yPosition = 100;
+            }
+            let yPosition = yPosition - 1;
+            do draw();
+            do orientate(82);
+        }
+        return;
+    }
+    method void moveUp(){
+        return;
+    }
+    method void moveDown(){
+        return;
+    }
+    method void eatPellets(){
+        let length = length + 5;
+        return;
+    }
+
+    method void shouldEatPellets(Pellets pellets){
+        // Check if colliding with the pellets.
+        if ((pellets.getXLocation() = xPosition) | (pellets.getYLocation() = yPosition)){
+            do eatPellets();
+        }
+        return;
+    }
+
+    method void draw(){
+        do Screen.setColor(true);
+        do Screen.drawRectangle(xPosition, yPosition, xPosition + length, yPosition + height);
+        return;
+    }
+
+    method void erase(){
+        do Screen.setColor(false);
+        do Screen.drawRectangle(xPosition, yPosition, xPosition + length, yPosition + height);
+        return;
+    }
+
+    // Setters & getters.
+
+    method int getXLocation(){
+        return xPosition;
+    }
+
+    method int getYLocation(){
+        return yPosition;
+    }
+
+    method int getSpeed(){
+        return speed;
+    }
+
+    method void setSpeed(int spd){
+        let speed = spd;
+        return;
+    }
+
+    method void setOrientation(char orntn){
+        let orientation = orntn;
+        return;
+    }
 }

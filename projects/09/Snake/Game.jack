@@ -1,49 +1,131 @@
 class Game {
     field char pressedKey;
+    field int gameSpeed;
+    field Canvas canvas;
+    field boolean gameOver;
+
     // Starts a new game
-    constructor Game new(){
+    constructor Game new(Canvas cn){
+        let gameSpeed = 1;     // Default game speed.
+        let canvas = cn;
+        let gameOver = false;
         return this;
     }
 
     method void run(Game game){
-        do game.beginGame();
-        return;
-    }
+        var int userInput;
 
-    method void beginGame(){
-        // Some kind of loop is needed.
-        var boolean isCrashed;
-        var Pellets pellets;
-        var int seed;
-
-        let isCrashed = true;
-        do displayMenu();
-        let seed = 8383;
-
-        while (isCrashed){
-            let seed = seed + 23;
-            let pressedKey = getPressedKey();
-            // if pressed key is 2, then exit.
-            if (pressedKey = 2){
-                let isCrashed = false;
-            }
-            let pellets = Pellets.new(seed);
-            do pellets.draw();
-            do Sys.wait(3000);
-            do pellets.erase();
+        let userInput = game.displayMenuScreen();
+        if (userInput = 49){
+            // Begin new game here;
+            do beginNewGame();
+        }
+        if (userInput = 50){
+            return;
         }
         return;
     }
 
-    method void displayMenu(){
-        do Output.moveCursor(10, 00);
+    method void beginNewGame(){
+        var Snake snake;
+        var Pellets pellets;
+        var char lastPressedKey;
+        var int seed;
+
+        let seed = 8848;
         do Screen.clearScreen();
+        let snake = canvas.getSnake();
+        let pellets = canvas.getPellets();
+        do snake.draw();
+        do pellets.draw();
+
+        while (~gameOver){
+            let seed = seed + 23;
+            let lastPressedKey = Utils.getLatestPressedKey();
+            // Get the keystrokes from the user.
+            // Move the snake accordingly.
+            //Move up
+            if (lastPressedKey = 131){
+                do Screen.clearScreen();
+                do Output.printString("Up.");
+                do snake.moveUp();
+            }
+            //Move down
+            if (lastPressedKey = 133){
+                do Screen.clearScreen();
+                do Output.printString("Down.");
+                do snake.moveDown();
+            }
+            //Move left
+            if (lastPressedKey = 130){
+                do Screen.clearScreen();
+                do Output.printString("Left.");
+                do snake.moveLeft(pellets);
+                do gameOver();
+            }
+            //Move right
+            if (lastPressedKey = 132){
+                do Screen.clearScreen();
+                do Output.printString("Right.");
+                do snake.moveRight();
+            }
+            if (pellets.isEaten()){
+                do pellets.setLocation(seed);
+            }
+        }
+        return;
+    }
+
+    method int displayMenuScreen(){
+        // Don't forget to instantiate userChoice.
+        var int userChoice;
+        var boolean displayMenu;
+        var Pellets pellets;
+        var Snake snake;
+
+        let displayMenu = true;
+        do mainMenu();
+        let snake = canvas.getSnake();
+
+
+        while (displayMenu){
+            let pressedKey = getPressedKey();
+            // if pressed key is 2, then exit.
+            if (pressedKey = 50){      // ASCII Code for the number 2, when pressed, exit.
+                let displayMenu = false;
+                let userChoice = 50;
+            }
+            if (pressedKey = 49){
+                let displayMenu = false;
+                let userChoice = 49;
+            }
+            let pellets = canvas.getPellets();
+            do pellets.draw();
+            do Sys.wait(1000);
+            do pellets.erase();
+            do snake.moveLeft(pellets);
+        }
+
+        return userChoice;
+    }
+
+    method void mainMenu(){
+        do Output.moveCursor(10, 00);
+        do Sys.wait(3000);
         do Output.printString("Hello, welcome to Anish's Implementation of Snake game in Jack.");
         do Sys.wait(3000);
         do Screen.clearScreen();
         do Output.moveCursor(10, 15);
         do Output.printString("Press 1 to begin, 2 to exit.");
         do Output.println();
+        return;
+    }
+
+    method void gameOver(){
+        let gameOver = true;
+        do Screen.clearScreen();
+        do Output.moveCursor(10, 29);
+        do Output.printString("Game Over");
         return;
     }
 

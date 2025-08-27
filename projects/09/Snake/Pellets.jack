@@ -1,13 +1,15 @@
 class Pellets {
 
     field int x, y;        // The coordinates where the pellets will appear in the screen.
-    field int size; 
+    field int size;
+    field boolean eaten;
     static int seed;
 
     constructor Pellets new(int newSeed){
         let x = getRandomXCoordinate();
         let y = getRandomYCoordinate();
         let size = 3;    // Find the optimal size of the pellets. It's going to be same size as snake's height.
+        let eaten = false;
         let seed = newSeed;
         return this;
     }
@@ -27,17 +29,38 @@ class Pellets {
         do Screen.drawRectangle(x, y, x + size, y + size);
         return;
     }
+    // Setters and getters
+    method boolean isEaten(){
+        return eaten;
+    }
+
+    method int getXLocation(){
+        return x;
+    }
+
+    method int getYLocation(){
+        return y;
+    }
+
+    method void setLocation(int newSeed){
+        do erase();
+        let seed = newSeed;
+        let x = getRandomXCoordinate();
+        let y = getRandomYCoordinate();
+        do draw();
+        return;
+    }
 
     method int getRandomYCoordinate(){
         // Return from util's getRandom() function.
         var int random;
-        let random = Utils.getRandom(2, 255, seed);
+        let random = Utils.getRandom(2, 200, seed);
         return random;
     }
 
     method int getRandomXCoordinate(){
         var int random;
-        let random = Utils.getRandom(1, 509, seed);
+        let random = Utils.getRandom(1, 430, seed);
         return random;
     }
 }
