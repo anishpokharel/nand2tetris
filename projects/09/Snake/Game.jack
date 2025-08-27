@@ -1,0 +1,54 @@
+class Game {
+    field char pressedKey;
+    // Starts a new game
+    constructor Game new(){
+        return this;
+    }
+
+    method void run(Game game){
+        do game.beginGame();
+        return;
+    }
+
+    method void beginGame(){
+        // Some kind of loop is needed.
+        var boolean isCrashed;
+        var Pellets pellets;
+        var int seed;
+
+        let isCrashed = true;
+        do displayMenu();
+        let seed = 8383;
+
+        while (isCrashed){
+            let seed = seed + 23;
+            let pressedKey = getPressedKey();
+            // if pressed key is 2, then exit.
+            if (pressedKey = 2){
+                let isCrashed = false;
+            }
+            let pellets = Pellets.new(seed);
+            do pellets.draw();
+            do Sys.wait(3000);
+            do pellets.erase();
+        }
+        return;
+    }
+
+    method void displayMenu(){
+        do Output.moveCursor(10, 00);
+        do Screen.clearScreen();
+        do Output.printString("Hello, welcome to Anish's Implementation of Snake game in Jack.");
+        do Sys.wait(3000);
+        do Screen.clearScreen();
+        do Output.moveCursor(10, 15);
+        do Output.printString("Press 1 to begin, 2 to exit.");
+        do Output.println();
+        return;
+    }
+
+    method char getPressedKey(){
+        let pressedKey = Keyboard.keyPressed();
+        return pressedKey;
+    }
+}

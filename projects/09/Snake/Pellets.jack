@@ -1,0 +1,43 @@
+class Pellets {
+
+    field int x, y;        // The coordinates where the pellets will appear in the screen.
+    field int size; 
+    static int seed;
+
+    constructor Pellets new(int newSeed){
+        let x = getRandomXCoordinate();
+        let y = getRandomYCoordinate();
+        let size = 3;    // Find the optimal size of the pellets. It's going to be same size as snake's height.
+        let seed = newSeed;
+        return this;
+    }
+
+    method void erase(){
+        do Screen.setColor(false);
+        do Screen.drawRectangle(x, y, x + size, y + size);
+        return;
+    }
+
+    method Pellets getPellet(){
+        return this;
+    }
+
+    method void draw(){
+        do Screen.setColor(true);
+        do Screen.drawRectangle(x, y, x + size, y + size);
+        return;
+    }
+
+    method int getRandomYCoordinate(){
+        // Return from util's getRandom() function.
+        var int random;
+        let random = Utils.getRandom(2, 255, seed);
+        return random;
+    }
+
+    method int getRandomXCoordinate(){
+        var int random;
+        let random = Utils.getRandom(1, 509, seed);
+        return random;
+    }
+}

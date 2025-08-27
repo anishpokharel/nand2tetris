@@ -1,0 +1,68 @@
+class Utils {
+    function int getRandom(int min, int max, int seed){
+        // Implement something solid to return random number
+        var int lo, hi, a, c, m, calc, nextSeed, range, rnd, res;
+
+        // Normalize bounds
+        let lo = min;
+        let hi = max;
+        if (hi < lo){
+            let lo = max;
+            let hi = min;
+        }
+        if (lo = hi){
+            return lo;
+        }
+
+        // 16-bit friendly LCG constants
+        let a = 25173;
+        let c = 13849;
+        let m = 32767;    // 2^15 - 1
+
+        // nextSeed = (a*seed + c) mod m  (via positive modulo)
+        let calc = a * seed + c;
+        let nextSeed = Utils.positiveModulo(calc, m);
+
+        // Scale to [lo, hi]; guard very large intervals
+        let range = hi - lo + 1;
+        if ((range < 0) | (range = 0)){
+            let range = 32767;
+        }  // overflow guard for extreme bounds
+
+        let rnd = Utils.positiveModulo(nextSeed, range);  // in [0, range-1]
+        let res = lo + rnd;                 // intended in [lo, hi]
+
+        // Absolute safety clamp to never exceed [lo, hi]
+        if (res < lo){
+            let res = lo;
+        }
+        if (res > hi){
+            let res = hi;
+        }
+
+        return res;              //
+    }
+
+    function int positiveModulo(int x, int y){
+        var int yy, r;
+        let yy = y;
+        if (yy < 0){
+            let yy = 0 - yy;
+        }
+        if ((yy < 0) | (yy = 0)){
+            return 0;
+        }   // guard y==0
+
+        let r = x;
+        if ((r > 0) | (r = 0)){
+            while ((r > yy) | (r = yy)){
+                let r = r - yy;
+            }
+        } else {
+            while (r < 0){
+                let r = r + yy;
+            }
+        }
+        return r;
+    }
+}

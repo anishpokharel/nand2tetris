@@ -1,0 +1,13 @@
+class Snake {
+    field int length; 
+
+    constructor Snake new(int len){
+        let length = len;
+        return this;
+    }
+
+    function void eatPellets(Pellets pellets, Snake snake){
+        return;
+    }
+
+}
