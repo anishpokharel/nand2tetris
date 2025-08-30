@@ -21,7 +21,7 @@ class Snake {
     constructor Snake new(){
         let segmentX = Array.new(256);
         let segmentY = Array.new(256);
-        let length = 30;   // Initial length.
+        let length = 3;   // Initial length aligns with initialized segments
         let height = 3;    // Initial height.
         let xPosition = 50;
         let yPosition = 30;
@@ -56,19 +56,7 @@ class Snake {
     }
 
     method void moveLeft(Pellets pellets){
-        if ((orientation = 85) | (orientation = 68)){   // 85 is U and 68 is D. Checking if it's already up or down.
-            do orientate(76);
-            if (xPosition = 0){
-                // In this case, GAME OVER.
-                // But for now, repeat from different position.
-                let xPosition = 100;
-            }
-
-            let xPosition = xPosition - 1;
-            do draw();
-            do shouldEatPellets(pellets);
-            let orientation = 76;
-        }
+        do move(3, pellets);  // LEFT
         return;
     }
 
@@ -100,6 +88,7 @@ class Snake {
         let headY = segmentY[0];
 
         do Screen.clearScreen();
+        do pellets.draw();
         if (direction = 0){
             let headY = headY - 1;
         }    // UP
@@ -122,6 +111,11 @@ class Snake {
         let segmentX[0] = headX;
         let segmentY[0] = headY;
 
+        // Check pellet collision at new head position -> schedule growth
+        if (pellets.isEaten(segmentX[0], segmentY[0])){
+            let pendingGrow = pendingGrow + 1;
+        }
+
         if (pendingGrow > 0){
             let segmentX[length] = segmentX[length - 1];
             let segmentY[length] = segmentY[length - 1];
@@ -134,13 +128,13 @@ class Snake {
     }
 
     method void eatPellets(){
-        let length = length + 5;
+        let pendingGrow = pendingGrow + 1;  // grow by one segment
         return;
     }
 
     method void shouldEatPellets(Pellets pellets){
-        // Check if colliding with the pellets.
-        if ((pellets.getXLocation() = xPosition) | (pellets.getYLocation() = yPosition)){
+        // Check head grid position against pellet grid position
+        if ((pellets.getXLocation() = segmentX[0]) & (pellets.getYLocation() = segmentY[0])){
             do eatPellets();
         }
         return;
@@ -149,11 +143,13 @@ class Snake {
     // Setters & getters.
 
     method int getXLocation(){
-        return xPosition;
+        // Return head grid X
+        return segmentX[0];
     }
 
     method int getYLocation(){
-        return yPosition;
+        // Return head grid Y
+        return segmentY[0];
     }
 
     method int getSpeed(){

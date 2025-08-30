@@ -1,22 +1,31 @@
 class Pellets {
 
-    field int x, y;        // The coordinates where the pellets will appear in the screen.
-    field int size;
+    // Grid coordinates (not pixels). Drawing scales by Canvas.CELL().
+    field int x, y;
+    field int size;        // kept for compatibility; drawing uses Canvas.CELL()
     field boolean eaten;
     static int seed;
 
     constructor Pellets new(int newSeed){
         let x = getRandomXCoordinate();
         let y = getRandomYCoordinate();
-        let size = 3;    // Find the optimal size of the pellets. It's going to be same size as snake's height.
+        let size = 3;    // unused for sizing; drawing uses Canvas.CELL()
         let eaten = false;
         let seed = newSeed;
         return this;
     }
 
     method void erase(){
+        var int cell, px, py, x1, y1, x2, y2;
+        let cell = Canvas.CELL();
+        let px = x * cell;
+        let py = y * cell;
+        let x1 = px;
+        let y1 = py;
+        let x2 = px + cell - 1;
+        let y2 = py + cell - 1;
         do Screen.setColor(false);
-        do Screen.drawRectangle(x, y, x + size, y + size);
+        do Screen.drawRectangle(x1, y1, x2, y2);
         return;
     }
 
@@ -25,13 +34,25 @@ class Pellets {
     }
 
     method void draw(){
+        var int cell, px, py, x1, y1, x2, y2;
+        let cell = Canvas.CELL();
+        let px = x * cell;
+        let py = y * cell;
+        let x1 = px;
+        let y1 = py;
+        let x2 = px + cell - 1;
+        let y2 = py + cell - 1;
         do Screen.setColor(true);
-        do Screen.drawRectangle(x, y, x + size, y + size);
+        do Screen.drawRectangle(x1, y1, x2, y2);
         return;
     }
     // Setters and getters
-    method boolean isEaten(){
-        return eaten;
+    method boolean isEaten(int xCoordinate, int yCoordinate){
+        if ((x = xCoordinate) & (y = yCoordinate)){
+            let eaten = true;
+            return true;
+        }
+        return false;
     }
 
     method int getXLocation(){
@@ -47,20 +68,24 @@ class Pellets {
         let seed = newSeed;
         let x = getRandomXCoordinate();
         let y = getRandomYCoordinate();
+        let eaten = false;
         do draw();
         return;
     }
 
     method int getRandomYCoordinate(){
-        // Return from util's getRandom() function.
-        var int random;
-        let random = Utils.getRandom(2, 200, seed);
-        return random;
+        // Random grid row in [0, (256 / CELL) - 1]
+        var int cell, maxY;
+        let cell = Canvas.CELL();
+        let maxY = 256 / cell - 1;   // 256 pixels high screen
+        return Utils.getRandom(0, maxY, seed);
     }
 
     method int getRandomXCoordinate(){
-        var int random;
-        let random = Utils.getRandom(1, 430, seed);
-        return random;
+        // Random grid col in [0, (512 / CELL) - 1]
+        var int cell, maxX;
+        let cell = Canvas.CELL();
+        let maxX = 512 / cell - 1;   // 512 pixels wide screen
+        return Utils.getRandom(0, maxX, seed);
     }
 }

@@ -31,15 +31,22 @@ class Game {
         var Pellets pellets;
         var char lastPressedKey;
         var int seed;
+        var char currentKeyPressed;
 
         let seed = 8848;
+        let lastPressedKey = 0;
         do canvas.clearCanvas();
         let snake = canvas.getSnake();
         let pellets = canvas.getPellets();
 
         while (~gameOver){
             let seed = seed + 23;
-            let lastPressedKey = Utils.getLatestPressedKey();
+            let currentKeyPressed = Utils.getLatestPressedKey();
+            if (currentKeyPressed = 0){
+            // Do nothing.
+            } else {
+                let lastPressedKey = currentKeyPressed;
+            }
             // Get the keystrokes from the user.
             // Move the snake accordingly.
             //Move up
@@ -58,7 +65,7 @@ class Game {
             if (lastPressedKey = 132){
                 do snake.move(1, pellets);
             }
-            if (pellets.isEaten()){
+            if (pellets.isEaten(snake.getXLocation(), snake.getYLocation())){
                 do pellets.setLocation(seed);
             }
             do Sys.wait(400);
@@ -92,7 +99,6 @@ class Game {
             do pellets.draw();
             do Sys.wait(1000);
             do pellets.erase();
-            do snake.moveLeft(pellets);
         }
         return userChoice;
     }
