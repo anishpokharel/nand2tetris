@@ -12,10 +12,10 @@ class Game {
         return this;
     }
 
-    method void run(Game game){
+    method void run(){
         var int userInput;
 
-        let userInput = game.displayMenuScreen();
+        let userInput = displayMenuScreen();
         if (userInput = 49){
             // Begin new game here;
             do beginNewGame();
@@ -33,11 +33,9 @@ class Game {
         var int seed;
 
         let seed = 8848;
-        do Screen.clearScreen();
+        do canvas.clearCanvas();
         let snake = canvas.getSnake();
         let pellets = canvas.getPellets();
-        do snake.draw();
-        do pellets.draw();
 
         while (~gameOver){
             let seed = seed + 23;
@@ -46,32 +44,24 @@ class Game {
             // Move the snake accordingly.
             //Move up
             if (lastPressedKey = 131){
-                do Screen.clearScreen();
-                do Output.printString("Up.");
-                do snake.moveUp();
+                do snake.move(0, pellets);
             }
             //Move down
             if (lastPressedKey = 133){
-                do Screen.clearScreen();
-                do Output.printString("Down.");
-                do snake.moveDown();
+                do snake.move(2, pellets);
             }
             //Move left
             if (lastPressedKey = 130){
-                do Screen.clearScreen();
-                do Output.printString("Left.");
-                do snake.moveLeft(pellets);
-                do gameOver();
+                do snake.move(3, pellets);
             }
             //Move right
             if (lastPressedKey = 132){
-                do Screen.clearScreen();
-                do Output.printString("Right.");
-                do snake.moveRight();
+                do snake.move(1, pellets);
             }
             if (pellets.isEaten()){
                 do pellets.setLocation(seed);
             }
+            do Sys.wait(400);
         }
         return;
     }
@@ -87,9 +77,8 @@ class Game {
         do mainMenu();
         let snake = canvas.getSnake();
 
-
         while (displayMenu){
-            let pressedKey = getPressedKey();
+            let pressedKey = Utils.getLatestPressedKey();
             // if pressed key is 2, then exit.
             if (pressedKey = 50){      // ASCII Code for the number 2, when pressed, exit.
                 let displayMenu = false;
@@ -105,7 +94,6 @@ class Game {
             do pellets.erase();
             do snake.moveLeft(pellets);
         }
-
         return userChoice;
     }
 
@@ -125,12 +113,10 @@ class Game {
         let gameOver = true;
         do Screen.clearScreen();
         do Output.moveCursor(10, 29);
-        do Output.printString("Game Over");
+        do Output.printString("Game Over!");
+        do Output.println();
+        do Output.moveCursor(11, 25);
+        do Output.printString("Here are the stats:");
         return;
-    }
-
-    method char getPressedKey(){
-        let pressedKey = Keyboard.keyPressed();
-        return pressedKey;
     }
 }

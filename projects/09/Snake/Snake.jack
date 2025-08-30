@@ -1,18 +1,52 @@
 class Snake {
+    static int counter;
     field int length;
     field int height;
     field int xPosition;
     field int yPosition;
     field char orientation;
     field int speed;
+    field Array segmentX;
+    field Array segmentY;
+    field int headX;
+    field int headY;
+    field int tailX;
+    field int tailY;
+    field int pendingGrow;
+    field Array dirQueue;   // stores directions (ints 0..3)
+    field int queueHead;    // index of next element to pop
+    field int queueTail;    // index of next free slot
+    field int queueLength;     // capacity of the queue
 
     constructor Snake new(){
+        let segmentX = Array.new(256);
+        let segmentY = Array.new(256);
         let length = 30;   // Initial length.
         let height = 3;    // Initial height.
         let xPosition = 50;
         let yPosition = 30;
         let orientation = 85;       // ASCII for capital L to denote Left.
         let speed = 10;    // Initial speed.
+
+        let segmentX[0] = 10;  // Head
+        let segmentY[0] = 10;
+        let segmentX[1] = 9;  // Body
+        let segmentY[1] = 10;
+        let segmentX[2] = 8;  // Tail
+        let segmentY[2] = 10;
+
+        let headX = segmentX[0];
+        let headY = segmentY[0];
+        let tailX = segmentX[length - 1];
+        let tailY = segmentY[length - 1];
+
+        let pendingGrow = 0;            // To track pending eaten pellets.
+
+        let queueLength = 8;                  // allow up to 8 buffered turns
+        let dirQueue = Array.new(queueLength);
+        let queueHead = 0;
+        let queueTail = 0;
+        let counter = 0;
         return this;
     }
 
@@ -24,7 +58,6 @@ class Snake {
     method void moveLeft(Pellets pellets){
         if ((orientation = 85) | (orientation = 68)){   // 85 is U and 68 is D. Checking if it's already up or down.
             do orientate(76);
-            do erase();
             if (xPosition = 0){
                 // In this case, GAME OVER.
                 // But for now, repeat from different position.
@@ -41,7 +74,6 @@ class Snake {
 
     method void moveRight(){
         if ((orientation = 85) | (orientation = 68)){   // 85 is U and 68 is D. Checking if it's already up or down.
-            do erase();
             if (yPosition = 0){
                 // In this case, GAME OVER.
                 // But for now, repeat from different position.
@@ -57,8 +89,50 @@ class Snake {
         return;
     }
     method void moveDown(){
+        let counter = counter + 1;
         return;
     }
+
+    method void move(int direction, Pellets pellets){
+        var int i;
+        let i = length - 1;
+        let headX = segmentX[0];
+        let headY = segmentY[0];
+
+        do Screen.clearScreen();
+        if (direction = 0){
+            let headY = headY - 1;
+        }    // UP
+        if (direction = 1){
+            let headX = headX + 1;
+        }    // RIGHT
+        if (direction = 2){
+            let headY = headY + 1;
+        }    // DOWN
+        if (direction = 3){
+            let headX = headX - 1;
+        }    // LEFT
+
+        while (i > 0){
+            let segmentX[i] = segmentX[i - 1];
+            let segmentY[i] = segmentY[i - 1];
+            let i = i - 1;
+        }
+
+        let segmentX[0] = headX;
+        let segmentY[0] = headY;
+
+        if (pendingGrow > 0){
+            let segmentX[length] = segmentX[length - 1];
+            let segmentY[length] = segmentY[length - 1];
+            let length = length + 1;
+            let pendingGrow = pendingGrow - 1;
+        }
+
+        do draw();
+        return;
+    }
+
     method void eatPellets(){
         let length = length + 5;
         return;
@@ -69,18 +143,6 @@ class Snake {
         if ((pellets.getXLocation() = xPosition) | (pellets.getYLocation() = yPosition)){
             do eatPellets();
         }
-        return;
-    }
-
-    method void draw(){
-        do Screen.setColor(true);
-        do Screen.drawRectangle(xPosition, yPosition, xPosition + length, yPosition + height);
-        return;
-    }
-
-    method void erase(){
-        do Screen.setColor(false);
-        do Screen.drawRectangle(xPosition, yPosition, xPosition + length, yPosition + height);
         return;
     }
 
@@ -105,6 +167,25 @@ class Snake {
 
     method void setOrientation(char orntn){
         let orientation = orntn;
+        return;
+    }
+
+    method void draw(){
+        var int i, px, py, x1, y1, x2, y2, cell;
+        let i = 0;
+        let cell = Canvas.CELL();
+
+        do Screen.setColor(true);
+        while (i < length){
+            let px = segmentX[i] * cell;              // grid -> pixels
+            let py = segmentY[i] * cell;
+            let x1 = px;
+            let y1 = py;
+            let x2 = px + cell - 1;
+            let y2 = py + cell - 1;
+            do Screen.drawRectangle(x1, y1, x2, y2);
+            let i = i + 1;
+        }
         return;
     }
 }

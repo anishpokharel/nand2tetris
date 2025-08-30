@@ -8,6 +8,10 @@ class Canvas {
         return this;
     }
 
+    function int CELL(){
+        return 4;   // each snake segment / pellet is a 4×4 square
+    }
+
     method Snake getSnake(){
         return snake;
     }
@@ -26,5 +30,10 @@ class Canvas {
             return true;
         }
         return false;
+    }
+
+    method void clearCanvas(){
+        do Screen.clearScreen();
+        return;
     }
 }

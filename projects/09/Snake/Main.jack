@@ -2,14 +2,14 @@ class Main {
     function void main(){
         var Game game;
         let game = Main.initialSetup();
-        do game.run(game);
+        do game.run();
         return;
     }
 
     function Game initialSetup(){
-        var Canvas canvas;
         var Pellets pellets;
         var Snake snake;
+        var Canvas canvas;
         var Game game;
 
         let pellets = Pellets.new(8848);

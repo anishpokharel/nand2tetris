@@ -1,0 +1,114 @@
+function Pellets.new 0
+push constant 4
+call Memory.alloc 1
+pop pointer 0
+push pointer 0
+call Pellets.getRandomXCoordinate 1
+pop this 0
+push pointer 0
+call Pellets.getRandomYCoordinate 1
+pop this 1
+push constant 3
+pop this 2
+push constant 0
+pop this 3
+push argument 0
+pop static 0
+push pointer 0
+return
+function Pellets.erase 0
+push argument 0
+pop pointer 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push this 0
+push this 1
+push this 0
+push this 2
+add
+push this 1
+push this 2
+add
+call Screen.drawRectangle 4
+pop temp 0
+push constant 0
+return
+function Pellets.getPellet 0
+push argument 0
+pop pointer 0
+push pointer 0
+return
+function Pellets.draw 0
+push argument 0
+pop pointer 0
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push this 0
+push this 1
+push this 0
+push this 2
+add
+push this 1
+push this 2
+add
+call Screen.drawRectangle 4
+pop temp 0
+push constant 0
+return
+function Pellets.isEaten 0
+push argument 0
+pop pointer 0
+push this 3
+return
+function Pellets.getXLocation 0
+push argument 0
+pop pointer 0
+push this 0
+return
+function Pellets.getYLocation 0
+push argument 0
+pop pointer 0
+push this 1
+return
+function Pellets.setLocation 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Pellets.erase 1
+pop temp 0
+push argument 1
+pop static 0
+push pointer 0
+call Pellets.getRandomXCoordinate 1
+pop this 0
+push pointer 0
+call Pellets.getRandomYCoordinate 1
+pop this 1
+push pointer 0
+call Pellets.draw 1
+pop temp 0
+push constant 0
+return
+function Pellets.getRandomYCoordinate 1
+push argument 0
+pop pointer 0
+push constant 2
+push constant 200
+push static 0
+call Utils.getRandom 3
+pop local 0
+push local 0
+return
+function Pellets.getRandomXCoordinate 1
+push argument 0
+pop pointer 0
+push constant 1
+push constant 430
+push static 0
+call Utils.getRandom 3
+pop local 0
+push local 0
+return

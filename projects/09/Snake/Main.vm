@@ -1,0 +1,23 @@
+function Main.main 1
+call Main.initialSetup 0
+pop local 0
+push local 0
+call Game.run 1
+pop temp 0
+push constant 0
+return
+function Main.initialSetup 4
+push constant 8848
+call Pellets.new 1
+pop local 0
+call Snake.new 0
+pop local 1
+push local 1
+push local 0
+call Canvas.new 2
+pop local 2
+push local 2
+call Game.new 1
+pop local 3
+push local 3
+return
